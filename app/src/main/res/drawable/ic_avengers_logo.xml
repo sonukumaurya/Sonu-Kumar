@@ -1,0 +1,24 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <!-- Circle Ring -->
+    <path
+        android:pathData="M48,4 C23.7,4 4,23.7 4,48 C4,72.3 23.7,92 48,92 C72.3,92 92,72.3 92,48 C92,23.7 72.3,4 48,4 Z M48,12 C67.9,12 84,28.1 84,48 C84,67.9 67.9,84 48,84 C28.1,84 12,67.9 12,48 C12,28.1 28.1,12 48,12 Z"
+        android:fillColor="#FFD700" />
+    
+    <!-- Stylized Avengers 'A' -->
+    <path
+        android:pathData="M52,16 L38,16 L18,72 L28,72 L33,57 L52,57 L47,72 L58,72 L69,40 L69,32 L58,32 L52,16 Z M36,49 L42,32 L47,49 L36,49 Z"
+        android:fillColor="#FFFFFF" />
+    
+    <!-- Arrow Accent -->
+    <path
+        android:pathData="M50,47 L78,47 L70,39 L78,47 L70,55 Z"
+        android:strokeColor="#FF4D4D"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#FF4D4D" />
+</vector>

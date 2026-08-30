@@ -1,0 +1,70 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Glowing core circle -->
+    <path
+        android:pathData="M54,54m-12,0a12,12 0,1,1 24,0a12,12 0,1,1 -24,0">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="42"
+                android:startY="42"
+                android:endX="66"
+                android:endY="66"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#F59E0B" />
+                <item android:offset="1.0" android:color="#EF4444" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Atomic Ellipse 1 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeWidth="2.5"
+        android:strokeColor="#38BDF8"
+        android:pathData="M54,54 m-24,-10 a26,12 30,1,0 48,20 a26,12 30,1,0 -48,-20" />
+    <!-- Atomic Ellipse 2 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeWidth="2.5"
+        android:strokeColor="#818CF8"
+        android:pathData="M54,54 m-24,10 a26,12 -30,1,0 48,-20 a26,12 -30,1,0 -48,20" />
+    <!-- Graduation Cap Top Diamond -->
+    <path
+        android:pathData="M54,30 L74,39 L54,48 L34,39 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="34"
+                android:startY="30"
+                android:endX="74"
+                android:endY="48"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#60A5FA" />
+                <item android:offset="1.0" android:color="#3B82F6" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Cap Skull & Tassel -->
+    <path
+        android:fillColor="#2563EB"
+        android:pathData="M42,43.5 L42,52 C42,56 66,56 66,52 L66,43.5 Z" />
+    <!-- Tassel ribbon -->
+    <path
+        android:strokeColor="#F59E0B"
+        android:strokeWidth="1.8"
+        android:fillColor="#00000000"
+        android:pathData="M70,40.5 L73,50 L75,54" />
+    <!-- Victory Star Badge at center -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,50.5 L55.5,53.5 L58.8,54 L56.4,56.3 L57,59.5 L54,57.8 L51,59.5 L51.6,56.3 L49.2,54 L52.5,53.5 Z" />
+    <!-- IIT / Target Glow Nodes -->
+    <path
+        android:fillColor="#34D399"
+        android:pathData="M32,48m-2.5,0a2.5,2.5 0,1,1 5,0a2.5,2.5 0,1,1 -5,0" />
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M76,60m-2.5,0a2.5,2.5 0,1,1 5,0a2.5,2.5 0,1,1 -5,0" />
+</vector>

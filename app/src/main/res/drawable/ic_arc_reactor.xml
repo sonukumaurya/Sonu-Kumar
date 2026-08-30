@@ -1,0 +1,34 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <!-- Arc Reactor Outer Ring -->
+    <path
+        android:pathData="M48,8 A40,40 0 1 0 48.01,8"
+        android:strokeColor="#00E5FF"
+        android:strokeWidth="4"
+        android:fillColor="#00000000" />
+    <!-- Secondary Glow Ring -->
+    <path
+        android:pathData="M48,18 A30,30 0 1 0 48.01,18"
+        android:strokeColor="#00B0FF"
+        android:strokeWidth="3"
+        android:fillColor="#00000000" />
+    <!-- Center Core Triangle -->
+    <path
+        android:pathData="M48,30 L64,58 L32,58 Z"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:fillColor="#8000E5FF" />
+    <!-- Inner Core Circle -->
+    <path
+        android:pathData="M48,42 A7,7 0 1 0 48.01,42"
+        android:fillColor="#FFFFFF" />
+    <!-- Power Ray Segments -->
+    <path
+        android:pathData="M48,8 L48,18 M48,78 L48,88 M8,48 L18,48 M78,48 L88,48 M20,20 L27,27 M69,69 L76,76 M20,76 L27,69 M69,27 L76,20"
+        android:strokeColor="#00E5FF"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round" />
+</vector>

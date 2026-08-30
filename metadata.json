@@ -1,0 +1,6 @@
+{
+  "name": "JEE Prep",
+  "description": "Comprehensive JEE Main & Advanced mastery dashboard with countdown, syllabus tracking, rank predictor, formula cheat sheets, score simulator, and IITian mentorship.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

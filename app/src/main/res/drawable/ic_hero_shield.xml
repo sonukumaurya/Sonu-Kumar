@@ -1,0 +1,26 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <!-- Outer Red Ring -->
+    <path
+        android:pathData="M48,4 A44,44 0 1 0 48.01,4"
+        android:fillColor="#E53935" />
+    <!-- White Ring -->
+    <path
+        android:pathData="M48,13 A35,35 0 1 0 48.01,13"
+        android:fillColor="#ECEFF1" />
+    <!-- Red Inner Ring -->
+    <path
+        android:pathData="M48,22 A26,26 0 1 0 48.01,22"
+        android:fillColor="#E53935" />
+    <!-- Blue Center Disc -->
+    <path
+        android:pathData="M48,31 A17,17 0 1 0 48.01,31"
+        android:fillColor="#1E88E5" />
+    <!-- Silver Star in Center -->
+    <path
+        android:pathData="M48,33 L51.7,42.5 L61.9,43.2 L54,50.1 L56.4,60.1 L48,54.8 L39.6,60.1 L42,50.1 L34.1,43.2 L44.3,42.5 Z"
+        android:fillColor="#FFFFFF" />
+</vector>
