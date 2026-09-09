@@ -50,6 +50,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
@@ -184,7 +185,73 @@ fun SyllabusScreen(
         .padding(horizontal = 16.dp),
       verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-      item { Spacer(modifier = Modifier.height(4.dp)) }
+      item { Spacer(modifier = Modifier.height(2.dp)) }
+
+      // Offline Cache Status Banner
+      item {
+        Surface(
+          color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+          shape = RoundedCornerShape(12.dp),
+          border = BorderStroke(1.dp, BrandEmerald.copy(alpha = 0.35f)),
+          modifier = Modifier
+            .fillMaxWidth()
+            .testTag("offline_cache_banner")
+        ) {
+          Row(
+            modifier = Modifier
+              .fillMaxWidth()
+              .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+          ) {
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+              Box(
+                modifier = Modifier
+                  .size(10.dp)
+                  .clip(CircleShape)
+                  .background(BrandEmerald)
+              )
+              Column {
+                Text(
+                  text = "Room DB Offline Cached",
+                  style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                  color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                  text = "${uiState.offlineCacheInfo.totalChaptersCached} chapters • ${uiState.offlineCacheInfo.totalTopicsCached} topics saved locally",
+                  style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                  color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+              }
+            }
+            Surface(
+              shape = RoundedCornerShape(16.dp),
+              color = BrandEmerald.copy(alpha = 0.15f)
+            ) {
+              Row(
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+              ) {
+                Icon(
+                  imageVector = Icons.Default.CheckCircle,
+                  contentDescription = "Offline Synced",
+                  tint = BrandEmerald,
+                  modifier = Modifier.size(13.dp)
+                )
+                Text(
+                  text = "100% Offline Ready",
+                  style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 10.sp),
+                  color = BrandEmerald
+                )
+              }
+            }
+          }
+        }
+      }
 
       // 2. Search Field
       item {

@@ -98,7 +98,31 @@ data class FormulaCard(
   val formula: String,
   val explanation: String,
   val unitsAndConstants: String,
-  val isBookmarked: Boolean = false
+  val isBookmarked: Boolean = false,
+  val isSavedOffline: Boolean = true
+)
+
+data class SavedFormulaSheet(
+  val id: String,
+  val title: String,
+  val subject: SubjectType,
+  val description: String,
+  val formulaCount: Int,
+  val formulaIds: List<String> = emptyList(),
+  val isDownloadedOffline: Boolean = true,
+  val category: String = "High-Yield",
+  val lastUpdatedFormatted: String = "Cached in Room DB",
+  val downloadSizeKb: Int = 32
+)
+
+data class OfflineCacheInfo(
+  val isDbReady: Boolean = true,
+  val totalChaptersCached: Int = 0,
+  val totalTopicsCached: Int = 0,
+  val totalFormulasCached: Int = 0,
+  val totalSheetsCached: Int = 0,
+  val lastSyncTime: Long = System.currentTimeMillis(),
+  val isOfflineModeActive: Boolean = true
 )
 
 data class College(
@@ -172,7 +196,19 @@ data class UserProfile(
   val targetScoreMains: Int = 250,
   val targetScoreAdvanced: Int = 280,
   val avengerRank: String = "Earth's Mightiest Aspirant",
-  val arcReactorEnergy: Int = 88 // 0-100%
+  val arcReactorEnergy: Int = 88, // 0-100%
+  val avatarUri: String? = null, // Custom user uploaded/picked image URI or remote URL
+  val avatarPreset: String = "iron_man", // "iron_man", "cap", "thor", "strange", "spiderman", "aspirant_boy", "aspirant_girl", "initials"
+  val avatarColorHex: Long = 0xFF00E5FF
+)
+
+data class AvatarPreset(
+  val id: String,
+  val label: String,
+  val subtitle: String,
+  val drawableRes: Int?,
+  val emoji: String,
+  val themeColorHex: Long
 )
 
 enum class QuoteCategory(val label: String, val emoji: String) {

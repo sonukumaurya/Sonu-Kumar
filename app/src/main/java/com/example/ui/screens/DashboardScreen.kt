@@ -71,8 +71,10 @@ import com.example.ui.components.AvengersMotivationCard
 import com.example.ui.components.AvengersQuotesDeckDialog
 import com.example.ui.components.CountdownTimerHero
 import com.example.ui.components.DailyGoalItemCard
+import com.example.ui.components.EditProfileAvatarDialog
 import com.example.ui.components.StreakTargetWidget
 import com.example.ui.components.SubjectMasteryProgressOverview
+import com.example.ui.components.UserAvatarView
 import com.example.ui.theme.BrandAccentGold
 import com.example.ui.theme.BrandEmerald
 import com.example.ui.theme.BrandPrimary
@@ -91,6 +93,7 @@ fun DashboardScreen(
   var showAddGoalDialog by remember { mutableStateOf(false) }
   var showQuotesDeckDialog by remember { mutableStateOf(false) }
   var showEditNameDialog by remember { mutableStateOf(false) }
+  var showAvatarDialog by remember { mutableStateOf(false) }
 
   LazyColumn(
     modifier = modifier
@@ -106,6 +109,7 @@ fun DashboardScreen(
       UserGreetingHeaderCard(
         userProfile = uiState.userProfile,
         onEditName = { showEditNameDialog = true },
+        onEditAvatar = { showAvatarDialog = true },
         onOpenSettings = { onNavigateToTab(6) }
       )
     }
@@ -340,6 +344,21 @@ fun DashboardScreen(
         showEditNameDialog = false
       },
       onDismiss = { showEditNameDialog = false }
+    )
+  }
+
+  if (showAvatarDialog) {
+    EditProfileAvatarDialog(
+      userProfile = uiState.userProfile,
+      onSaveAvatar = { customUri, presetId, colorHex, clearCustom ->
+        viewModel.updateUserProfile(
+          avatarUri = customUri,
+          avatarPreset = presetId,
+          avatarColorHex = colorHex,
+          clearCustomImage = clearCustom
+        )
+      },
+      onDismiss = { showAvatarDialog = false }
     )
   }
 }
@@ -708,21 +727,10 @@ fun AddGoalDialog(
 fun UserGreetingHeaderCard(
   userProfile: com.example.data.UserProfile,
   onEditName: () -> Unit,
+  onEditAvatar: () -> Unit,
   onOpenSettings: () -> Unit,
   modifier: Modifier = Modifier
 ) {
-  // Extract initials (e.g., "SK" for Sonu Kumar)
-  val initials = remember(userProfile.name) {
-    userProfile.name.trim()
-      .split(" ")
-      .filter { it.isNotBlank() }
-      .mapNotNull { it.firstOrNull()?.toString() }
-      .take(2)
-      .joinToString("")
-      .ifEmpty { "SK" }
-      .uppercase()
-  }
-
   Card(
     modifier = modifier
       .fillMaxWidth()
@@ -748,26 +756,14 @@ fun UserGreetingHeaderCard(
           modifier = Modifier.weight(1f),
           verticalAlignment = Alignment.CenterVertically
         ) {
-          // User Avatar with Initials
-          Box(
-            modifier = Modifier
-              .size(46.dp)
-              .clip(CircleShape)
-              .background(
-                Brush.linearGradient(
-                  listOf(BrandPrimary, BrandSecondary)
-                )
-              )
-              .clickable { onEditName() },
-            contentAlignment = Alignment.Center
-          ) {
-            Text(
-              text = initials,
-              fontSize = 18.sp,
-              fontWeight = FontWeight.ExtraBold,
-              color = Color.Black
-            )
-          }
+          // User Avatar with Custom Photo / Preset / Monogram + Editable Badge
+          UserAvatarView(
+            userProfile = userProfile,
+            size = 50.dp,
+            isEditable = true,
+            onClick = onEditAvatar,
+            modifier = Modifier.testTag("home_user_avatar")
+          )
 
           Spacer(modifier = Modifier.width(12.dp))
 
@@ -792,12 +788,14 @@ fun UserGreetingHeaderCard(
               )
             }
 
-            Text(
-              text = "Target JEE ${userProfile.targetYear} • Aiming for AIR < ${userProfile.targetAir}",
-              style = MaterialTheme.typography.bodySmall,
-              fontWeight = FontWeight.SemiBold,
-              color = BrandPrimary
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Text(
+                text = "Target JEE ${userProfile.targetYear} • AIR < ${userProfile.targetAir}",
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.SemiBold,
+                color = BrandPrimary
+              )
+            }
           }
         }
 

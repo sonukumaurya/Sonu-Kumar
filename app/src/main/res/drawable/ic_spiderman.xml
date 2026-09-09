@@ -1,0 +1,41 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <!-- Geometric Spider Body -->
+    <path
+        android:pathData="M48,34 L52,44 L48,54 L44,44 Z"
+        android:fillColor="#FF1744" />
+    <path
+        android:pathData="M48,56 L54,70 L48,78 L42,70 Z"
+        android:fillColor="#FF1744" />
+    
+    <!-- Top Legs -->
+    <path
+        android:pathData="M46,40 L30,22 L18,26 M50,40 L66,22 L78,26"
+        android:strokeColor="#FF5252"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M46,44 L26,36 L14,46 M50,44 L70,36 L82,46"
+        android:strokeColor="#FF5252"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    
+    <!-- Bottom Legs -->
+    <path
+        android:pathData="M46,62 L24,68 L16,84 M50,62 L72,68 L80,84"
+        android:strokeColor="#FF5252"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M46,66 L30,76 L26,90 M50,66 L66,76 L70,90"
+        android:strokeColor="#FF5252"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

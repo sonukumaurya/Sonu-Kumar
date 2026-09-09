@@ -1,5 +1,6 @@
 package com.example.ui.viewmodel
 
+import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.CandidateCategory
@@ -13,8 +14,10 @@ import com.example.data.FormulaCard
 import com.example.data.Mentor
 import com.example.data.MockTest
 import com.example.data.MotivationalQuote
+import com.example.data.OfflineCacheInfo
 import com.example.data.QuoteCategory
 import com.example.data.SampleData
+import com.example.data.SavedFormulaSheet
 import com.example.data.ScoreEntryMode
 import com.example.data.ShiftDifficulty
 import com.example.data.SubjectQuestionBreakdown
@@ -26,6 +29,8 @@ import com.example.data.TopicFilterMode
 import com.example.data.UserProfile
 import com.example.data.WeightageLevel
 import com.example.data.WhatIfScenario
+import com.example.data.local.JeeAppDatabase
+import com.example.data.repository.JeeOfflineRepository
 import com.example.ui.theme.AppThemeMode
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -59,9 +64,17 @@ data class JeePrepUiState(
   val dailyGoals: List<DailyGoal> = SampleData.dailyGoals,
   val mockTests: List<MockTest> = SampleData.mockTests,
   val formulas: List<FormulaCard> = SampleData.formulas,
+  val savedFormulaSheets: List<SavedFormulaSheet> = SampleData.savedFormulaSheets,
   val colleges: List<College> = SampleData.colleges,
   val mentors: List<Mentor> = SampleData.mentors,
   val chatMessages: Map<String, List<ChatMessage>> = SampleData.sampleChatMessages,
+  val offlineCacheInfo: OfflineCacheInfo = OfflineCacheInfo(
+    isDbReady = true,
+    totalChaptersCached = SampleData.chapters.size,
+    totalTopicsCached = SampleData.chapters.sumOf { it.topics.size },
+    totalFormulasCached = SampleData.formulas.size,
+    totalSheetsCached = SampleData.savedFormulaSheets.size
+  ),
 
   // Selected sub-views / modals
   val selectedSubjectTab: SubjectType = SubjectType.PHYSICS,
@@ -74,6 +87,8 @@ data class JeePrepUiState(
   val formulaSearchQuery: String = "",
   val formulaSubjectFilter: SubjectType? = null,
   val formulaOnlyBookmarked: Boolean = false,
+  val selectedFormulaTab: Int = 0, // 0 = All Formulas, 1 = Saved Formula Sheets (Offline)
+  val selectedFormulaSheet: SavedFormulaSheet? = null,
   
   // Timer & Pomodoro State
   val timerSecondsRemaining: Int = 25 * 60,
@@ -287,12 +302,71 @@ data class JeePrepUiState(
   }
 }
 
-class JeePrepViewModel : ViewModel() {
+class JeePrepViewModel @JvmOverloads constructor(
+  application: Application? = null,
+  customRepository: JeeOfflineRepository? = null
+) : ViewModel() {
+
+  private val repository: JeeOfflineRepository? = customRepository ?: application?.let {
+    JeeOfflineRepository(JeeAppDatabase.getInstance(it))
+  }
 
   private val _uiState = MutableStateFlow(JeePrepUiState())
   val uiState: StateFlow<JeePrepUiState> = _uiState.asStateFlow()
 
   private var timerJob: Job? = null
+
+  init {
+    repository?.let { repo ->
+      viewModelScope.launch {
+        repo.initializeDatabaseIfEmpty()
+      }
+      viewModelScope.launch {
+        repo.chaptersFlow.collect { dbChapters ->
+          if (dbChapters.isNotEmpty()) {
+            _uiState.update { state ->
+              state.copy(
+                chapters = dbChapters,
+                offlineCacheInfo = state.offlineCacheInfo.copy(
+                  totalChaptersCached = dbChapters.size,
+                  totalTopicsCached = dbChapters.sumOf { it.topics.size },
+                  isDbReady = true
+                )
+              )
+            }
+          }
+        }
+      }
+      viewModelScope.launch {
+        repo.formulasFlow.collect { dbFormulas ->
+          if (dbFormulas.isNotEmpty()) {
+            _uiState.update { state ->
+              state.copy(
+                formulas = dbFormulas,
+                offlineCacheInfo = state.offlineCacheInfo.copy(
+                  totalFormulasCached = dbFormulas.size
+                )
+              )
+            }
+          }
+        }
+      }
+      viewModelScope.launch {
+        repo.formulaSheetsFlow.collect { dbSheets ->
+          if (dbSheets.isNotEmpty()) {
+            _uiState.update { state ->
+              state.copy(
+                savedFormulaSheets = dbSheets,
+                offlineCacheInfo = state.offlineCacheInfo.copy(
+                  totalSheetsCached = dbSheets.count { it.isDownloadedOffline }
+                )
+              )
+            }
+          }
+        }
+      }
+    }
+  }
 
   // ---------------- Theme & Profile ----------------
   fun setThemeMode(mode: AppThemeMode) {
@@ -383,11 +457,15 @@ class JeePrepViewModel : ViewModel() {
   }
 
   fun toggleTopicCompletion(chapterId: String, topicId: String) {
+    var newCompleted = false
     _uiState.update { state ->
       val updated = state.chapters.map { ch ->
         if (ch.id == chapterId) {
           val updatedTopics = ch.topics.map { top ->
-            if (top.id == topicId) top.copy(isCompleted = !top.isCompleted) else top
+            if (top.id == topicId) {
+              newCompleted = !top.isCompleted
+              top.copy(isCompleted = !top.isCompleted)
+            } else top
           }
           val allDone = updatedTopics.isNotEmpty() && updatedTopics.all { it.isCompleted }
           val anyDone = updatedTopics.any { it.isCompleted }
@@ -400,6 +478,9 @@ class JeePrepViewModel : ViewModel() {
         } else ch
       }
       state.copy(chapters = updated)
+    }
+    viewModelScope.launch {
+      repository?.toggleTopicCompletion(chapterId, topicId, newCompleted)
     }
   }
 
@@ -414,6 +495,9 @@ class JeePrepViewModel : ViewModel() {
       }
       state.copy(chapters = updated)
     }
+    viewModelScope.launch {
+      repository?.markAllTopicsInChapter(chapterId, completed)
+    }
   }
 
   fun markAllSubjectTopics(subject: SubjectType, completed: Boolean) {
@@ -427,33 +511,40 @@ class JeePrepViewModel : ViewModel() {
       }
       state.copy(chapters = updated)
     }
+    viewModelScope.launch {
+      repository?.markAllSubjectTopics(subject, completed)
+    }
   }
 
   fun addCustomTopic(chapterId: String, topicName: String, isHighYield: Boolean, keyFormulaHint: String?) {
     if (topicName.isBlank()) return
+    val newTopic = SyllabusTopic(
+      id = "custom_${System.currentTimeMillis()}",
+      name = topicName.trim(),
+      isCompleted = false,
+      isHighYield = isHighYield,
+      tag = if (isHighYield) "High Yield" else "Custom",
+      keyFormulaHint = keyFormulaHint?.takeIf { it.isNotBlank() }
+    )
     _uiState.update { state ->
       val updated = state.chapters.map { ch ->
         if (ch.id == chapterId) {
-          val newTopic = SyllabusTopic(
-            id = "custom_${System.currentTimeMillis()}",
-            name = topicName.trim(),
-            isCompleted = false,
-            isHighYield = isHighYield,
-            tag = if (isHighYield) "High Yield" else "Custom",
-            keyFormulaHint = keyFormulaHint?.takeIf { it.isNotBlank() }
-          )
           ch.copy(topics = ch.topics + newTopic)
         } else ch
       }
       state.copy(chapters = updated)
     }
+    viewModelScope.launch {
+      repository?.addCustomTopic(chapterId, newTopic)
+    }
   }
 
   fun cycleChapterStatus(chapterId: String) {
+    var nextStatus = ChapterStatus.NOT_STARTED
     _uiState.update { state ->
       val updated = state.chapters.map { ch ->
         if (ch.id == chapterId) {
-          val nextStatus = when (ch.status) {
+          nextStatus = when (ch.status) {
             ChapterStatus.NOT_STARTED -> ChapterStatus.IN_PROGRESS
             ChapterStatus.IN_PROGRESS -> ChapterStatus.REVISED
             ChapterStatus.REVISED -> ChapterStatus.MASTERED
@@ -471,18 +562,26 @@ class JeePrepViewModel : ViewModel() {
       }
       state.copy(chapters = updated)
     }
+    viewModelScope.launch {
+      repository?.updateChapterStatus(chapterId, nextStatus)
+    }
   }
 
   fun incrementChapterPyqs(chapterId: String, delta: Int = 5) {
+    var newCount = 0
+    var newStatus = ChapterStatus.NOT_STARTED
     _uiState.update { state ->
       val updated = state.chapters.map { ch ->
         if (ch.id == chapterId) {
-          val newCount = (ch.pyqsSolved + delta).coerceIn(0, ch.totalPyqs)
-          val newStatus = if (newCount >= ch.totalPyqs && ch.status != ChapterStatus.MASTERED) ChapterStatus.MASTERED else ch.status
+          newCount = (ch.pyqsSolved + delta).coerceIn(0, ch.totalPyqs)
+          newStatus = if (newCount >= ch.totalPyqs && ch.status != ChapterStatus.MASTERED) ChapterStatus.MASTERED else ch.status
           ch.copy(pyqsSolved = newCount, status = newStatus)
         } else ch
       }
       state.copy(chapters = updated)
+    }
+    viewModelScope.launch {
+      repository?.updateChapterPyqs(chapterId, newCount, newStatus)
     }
   }
 
@@ -700,12 +799,64 @@ class JeePrepViewModel : ViewModel() {
   }
 
   fun toggleFormulaBookmark(formulaId: String) {
+    var newBookmarked = false
     _uiState.update { state ->
       val updated = state.formulas.map { f ->
-        if (f.id == formulaId) f.copy(isBookmarked = !f.isBookmarked) else f
+        if (f.id == formulaId) {
+          newBookmarked = !f.isBookmarked
+          f.copy(isBookmarked = newBookmarked)
+        } else f
       }
       state.copy(formulas = updated)
     }
+    viewModelScope.launch {
+      repository?.toggleFormulaBookmark(formulaId, newBookmarked)
+    }
+  }
+
+  fun toggleFormulaOffline(formulaId: String) {
+    var newOffline = true
+    _uiState.update { state ->
+      val updated = state.formulas.map { f ->
+        if (f.id == formulaId) {
+          newOffline = !f.isSavedOffline
+          f.copy(isSavedOffline = newOffline)
+        } else f
+      }
+      state.copy(formulas = updated)
+    }
+    viewModelScope.launch {
+      repository?.toggleFormulaOffline(formulaId, newOffline)
+    }
+  }
+
+  fun toggleSheetOffline(sheetId: String) {
+    var newOffline = true
+    _uiState.update { state ->
+      val updated = state.savedFormulaSheets.map { sheet ->
+        if (sheet.id == sheetId) {
+          newOffline = !sheet.isDownloadedOffline
+          sheet.copy(isDownloadedOffline = newOffline)
+        } else sheet
+      }
+      state.copy(
+        savedFormulaSheets = updated,
+        offlineCacheInfo = state.offlineCacheInfo.copy(
+          totalSheetsCached = updated.count { it.isDownloadedOffline }
+        )
+      )
+    }
+    viewModelScope.launch {
+      repository?.toggleSheetOffline(sheetId, newOffline)
+    }
+  }
+
+  fun setSelectedFormulaTab(tabIndex: Int) {
+    _uiState.update { it.copy(selectedFormulaTab = tabIndex) }
+  }
+
+  fun setSelectedFormulaSheet(sheet: SavedFormulaSheet?) {
+    _uiState.update { it.copy(selectedFormulaSheet = sheet) }
   }
 
   fun toggleFormulaOnlyBookmarked() {
@@ -845,17 +996,25 @@ class JeePrepViewModel : ViewModel() {
     dreamCollege: String? = null,
     dreamBranch: String? = null,
     targetAir: Int? = null,
-    targetYear: Int? = null
+    targetYear: Int? = null,
+    avatarUri: String? = null,
+    avatarPreset: String? = null,
+    avatarColorHex: Long? = null,
+    clearCustomImage: Boolean = false
   ) {
     _uiState.update { state ->
       val p = state.userProfile
+      val updatedAvatarUri = if (clearCustomImage) null else (avatarUri ?: p.avatarUri)
       state.copy(
         userProfile = p.copy(
           name = name?.trim()?.takeIf { it.isNotBlank() } ?: p.name,
           dreamCollege = dreamCollege?.trim()?.takeIf { it.isNotBlank() } ?: p.dreamCollege,
           dreamBranch = dreamBranch?.trim()?.takeIf { it.isNotBlank() } ?: p.dreamBranch,
           targetAir = targetAir ?: p.targetAir,
-          targetYear = targetYear ?: p.targetYear
+          targetYear = targetYear ?: p.targetYear,
+          avatarUri = updatedAvatarUri,
+          avatarPreset = avatarPreset ?: p.avatarPreset,
+          avatarColorHex = avatarColorHex ?: p.avatarColorHex
         )
       )
     }

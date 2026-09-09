@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.ElectricBolt
 import androidx.compose.material.icons.filled.LightMode
@@ -39,6 +40,8 @@ import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
+import com.example.ui.components.UserAvatarView
+import com.example.ui.components.EditProfileAvatarDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -89,6 +92,7 @@ fun ProfileSettingsScreen(
   var editingName by remember { mutableStateOf(uiState.userProfile.name) }
   var editingDreamCollege by remember { mutableStateOf(uiState.userProfile.dreamCollege) }
   var editingDreamBranch by remember { mutableStateOf(uiState.userProfile.dreamBranch) }
+  var showAvatarDialog by remember { mutableStateOf(false) }
 
   // Permission launcher for Android 13+ POST_NOTIFICATIONS
   val permissionLauncher = rememberLauncherForActivityResult(
@@ -126,29 +130,18 @@ fun ProfileSettingsScreen(
           Row(
             verticalAlignment = Alignment.CenterVertically
           ) {
-            Box(
-              modifier = Modifier
-                .size(54.dp)
-                .clip(CircleShape)
-                .background(
-                  Brush.linearGradient(
-                    listOf(BrandPrimary, BrandSecondary)
-                  )
-                ),
-              contentAlignment = Alignment.Center
-            ) {
-              val initials = uiState.userProfile.name.trim().split(" ").filter { it.isNotBlank() }.mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").ifEmpty { "SK" }.uppercase()
-              Text(
-                text = initials,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = Color.Black
-              )
-            }
+            // Profile photo / preset avatar with edit capability
+            UserAvatarView(
+              userProfile = uiState.userProfile,
+              size = 64.dp,
+              isEditable = true,
+              onClick = { showAvatarDialog = true },
+              modifier = Modifier.testTag("profile_avatar_view")
+            )
 
             Spacer(modifier = Modifier.width(14.dp))
 
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
               Text(
                 text = uiState.userProfile.name,
                 style = MaterialTheme.typography.titleMedium,
@@ -167,6 +160,32 @@ fun ProfileSettingsScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
               )
             }
+          }
+
+          Spacer(modifier = Modifier.height(12.dp))
+
+          // Edit Avatar Quick Button
+          OutlinedButton(
+            onClick = { showAvatarDialog = true },
+            modifier = Modifier
+              .fillMaxWidth()
+              .testTag("open_avatar_picker_button"),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, BrandPrimary.copy(alpha = 0.6f))
+          ) {
+            Icon(
+              imageVector = Icons.Default.CameraAlt,
+              contentDescription = null,
+              tint = BrandPrimary,
+              modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+              text = "Choose Avengers Avatar or Upload Photo 📸",
+              style = MaterialTheme.typography.labelMedium,
+              fontWeight = FontWeight.Bold,
+              color = MaterialTheme.colorScheme.onSurface
+            )
           }
 
           Spacer(modifier = Modifier.height(14.dp))
@@ -781,6 +800,21 @@ fun ProfileSettingsScreen(
     }
 
     item { Spacer(modifier = Modifier.height(24.dp)) }
+  }
+
+  if (showAvatarDialog) {
+    EditProfileAvatarDialog(
+      userProfile = uiState.userProfile,
+      onSaveAvatar = { customUri, presetId, colorHex, clearCustom ->
+        viewModel.updateUserProfile(
+          avatarUri = customUri,
+          avatarPreset = presetId,
+          avatarColorHex = colorHex,
+          clearCustomImage = clearCustom
+        )
+      },
+      onDismiss = { showAvatarDialog = false }
+    )
   }
 }
 

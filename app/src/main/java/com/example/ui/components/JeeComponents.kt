@@ -47,6 +47,22 @@ import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.NavigateBefore
 import androidx.compose.material.icons.filled.NavigateNext
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.layout.ContentScale
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import coil.compose.AsyncImage
+import com.example.data.UserProfile
+import com.example.data.SampleData
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
@@ -1548,6 +1564,22 @@ fun FormulaCardItem(
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
           )
+
+          if (card.isSavedOffline) {
+            Spacer(modifier = Modifier.width(6.dp))
+            Box(
+              modifier = Modifier
+                .clip(RoundedCornerShape(4.dp))
+                .background(BrandEmerald.copy(alpha = 0.15f))
+                .padding(horizontal = 5.dp, vertical = 1.dp)
+            ) {
+              Text(
+                text = "Offline Cached",
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.SemiBold),
+                color = BrandEmerald
+              )
+            }
+          }
         }
 
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1937,6 +1969,552 @@ fun StatBadge(
   }
 }
 
+// -------------------------------------------------------------
+// AVENGERS THEME BACKGROUND & ARTWORK WATERMARK COMPONENT
+// -------------------------------------------------------------
+@Composable
+fun AvengersThemeArtWatermark(
+  heroType: String,
+  accentColor: Color,
+  modifier: Modifier = Modifier
+) {
+  val iconRes = when (heroType) {
+    "CAPTAIN_AMERICA" -> R.drawable.ic_hero_shield
+    "IRON_MAN" -> R.drawable.ic_arc_reactor
+    "THOR" -> R.drawable.ic_thor_hammer
+    "DOCTOR_STRANGE" -> R.drawable.ic_doctor_strange
+    "SPIDER_MAN" -> R.drawable.ic_spiderman
+    "INFINITY_GAUNTLET" -> R.drawable.ic_infinity_gauntlet
+    else -> R.drawable.ic_avengers_logo
+  }
+
+  Box(
+    modifier = modifier,
+    contentAlignment = Alignment.Center
+  ) {
+    // Ambient colored radial background aura
+    Box(
+      modifier = Modifier
+        .size(190.dp)
+        .clip(CircleShape)
+        .background(
+          Brush.radialGradient(
+            listOf(
+              accentColor.copy(alpha = 0.22f),
+              accentColor.copy(alpha = 0.05f),
+              Color.Transparent
+            )
+          )
+        )
+    )
+
+    // Giant artistic Avengers icon watermark
+    Image(
+      painter = painterResource(id = iconRes),
+      contentDescription = null,
+      modifier = Modifier
+        .size(150.dp)
+        .alpha(0.18f),
+      contentScale = ContentScale.Fit
+    )
+  }
+}
+
+// -------------------------------------------------------------
+// USER AVATAR VIEW WITH CUSTOM PHOTO & PRESET SUPPORT
+// -------------------------------------------------------------
+@Composable
+fun UserAvatarView(
+  userProfile: UserProfile,
+  size: androidx.compose.ui.unit.Dp = 48.dp,
+  isEditable: Boolean = false,
+  onClick: (() -> Unit)? = null,
+  modifier: Modifier = Modifier
+) {
+  val initials = remember(userProfile.name) {
+    userProfile.name.trim()
+      .split(" ")
+      .filter { it.isNotBlank() }
+      .mapNotNull { it.firstOrNull()?.toString() }
+      .take(2)
+      .joinToString("")
+      .ifEmpty { "SK" }
+      .uppercase()
+  }
+
+  val auraColor = Color(userProfile.avatarColorHex)
+
+  val avatarBoxModifier = modifier
+    .size(size)
+    .clip(CircleShape)
+    .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+    .border(2.dp, auraColor, CircleShape)
+
+  Box(
+    modifier = Modifier.size(if (isEditable) size + 6.dp else size),
+    contentAlignment = Alignment.Center
+  ) {
+    Box(
+      modifier = avatarBoxModifier,
+      contentAlignment = Alignment.Center
+    ) {
+      if (!userProfile.avatarUri.isNullOrBlank()) {
+        // Custom User Image via Coil AsyncImage
+        AsyncImage(
+          model = userProfile.avatarUri,
+          contentDescription = "User Profile Photo",
+          modifier = Modifier
+            .size(size)
+            .clip(CircleShape),
+          contentScale = ContentScale.Crop
+        )
+      } else {
+        // Preset or Initials
+        val presetDrawable = when (userProfile.avatarPreset) {
+          "iron_man" -> R.drawable.ic_arc_reactor
+          "cap" -> R.drawable.ic_hero_shield
+          "thor" -> R.drawable.ic_thor_hammer
+          "strange" -> R.drawable.ic_doctor_strange
+          "spiderman" -> R.drawable.ic_spiderman
+          "infinity_gauntlet" -> R.drawable.ic_infinity_gauntlet
+          "avengers_assemble" -> R.drawable.ic_avengers_logo
+          else -> null
+        }
+
+        if (presetDrawable != null) {
+          Box(
+            modifier = Modifier
+              .fillMaxWidth()
+              .background(
+                Brush.radialGradient(
+                  listOf(Color(0xFF1E2235), Color(0xFF0F111A))
+                )
+              )
+              .padding(size * 0.16f),
+            contentAlignment = Alignment.Center
+          ) {
+            Image(
+              painter = painterResource(id = presetDrawable),
+              contentDescription = "Avatar Preset",
+              modifier = Modifier.size(size * 0.72f),
+              contentScale = ContentScale.Fit
+            )
+          }
+        } else if (userProfile.avatarPreset == "aspirant_boy") {
+          Box(
+            modifier = Modifier
+              .size(size)
+              .background(Brush.linearGradient(listOf(BrandEmerald, BrandPrimary))),
+            contentAlignment = Alignment.Center
+          ) {
+            Text(text = "👨‍🎓", fontSize = (size.value * 0.48f).sp)
+          }
+        } else if (userProfile.avatarPreset == "aspirant_girl") {
+          Box(
+            modifier = Modifier
+              .size(size)
+              .background(Brush.linearGradient(listOf(BrandRose, BrandAccentGold))),
+            contentAlignment = Alignment.Center
+          ) {
+            Text(text = "👩‍🎓", fontSize = (size.value * 0.48f).sp)
+          }
+        } else {
+          // Default Initials (e.g. SK)
+          Box(
+            modifier = Modifier
+              .size(size)
+              .background(
+                Brush.linearGradient(
+                  listOf(BrandPrimary, BrandSecondary)
+                )
+              ),
+            contentAlignment = Alignment.Center
+          ) {
+            Text(
+              text = initials,
+              fontSize = (size.value * 0.38f).sp,
+              fontWeight = FontWeight.ExtraBold,
+              color = Color.Black
+            )
+          }
+        }
+      }
+    }
+
+    // Editable camera badge on corner
+    if (isEditable) {
+      Box(
+        modifier = Modifier
+          .size(size * 0.38f)
+          .align(Alignment.BottomEnd)
+          .clip(CircleShape)
+          .background(BrandAccentGold)
+          .border(1.dp, Color.Black, CircleShape),
+        contentAlignment = Alignment.Center
+      ) {
+        Icon(
+          imageVector = Icons.Default.CameraAlt,
+          contentDescription = "Edit Photo",
+          tint = Color.Black,
+          modifier = Modifier.size(size * 0.22f)
+        )
+      }
+    }
+  }
+}
+
+// -------------------------------------------------------------
+// EDIT PROFILE AVATAR DIALOG (GALLERY PICKER, URL & HERO PRESETS)
+// -------------------------------------------------------------
+@Composable
+fun EditProfileAvatarDialog(
+  userProfile: UserProfile,
+  onSaveAvatar: (customUri: String?, presetId: String, colorHex: Long, clearCustom: Boolean) -> Unit,
+  onDismiss: () -> Unit
+) {
+  val context = LocalContext.current
+  var selectedTab by remember { mutableStateOf(0) } // 0: Avengers & Presets, 1: Gallery & URL
+  var selectedPreset by remember { mutableStateOf(userProfile.avatarPreset) }
+  var customImageUrl by remember { mutableStateOf(userProfile.avatarUri ?: "") }
+  var selectedColorHex by remember { mutableStateOf(userProfile.avatarColorHex) }
+  var hasNewPickedImage by remember { mutableStateOf(false) }
+
+  // System Photo Picker launcher
+  val photoPickerLauncher = rememberLauncherForActivityResult(
+    contract = ActivityResultContracts.GetContent()
+  ) { uri ->
+    if (uri != null) {
+      customImageUrl = uri.toString()
+      hasNewPickedImage = true
+      Toast.makeText(context, "Photo loaded from device! 📸", Toast.LENGTH_SHORT).show()
+    }
+  }
+
+  val previewProfile = remember(userProfile, customImageUrl, selectedPreset, selectedColorHex) {
+    userProfile.copy(
+      avatarUri = customImageUrl.trim().ifEmpty { null },
+      avatarPreset = selectedPreset,
+      avatarColorHex = selectedColorHex
+    )
+  }
+
+  val colorPalette = listOf(
+    0xFF00E5FF, // Cyan
+    0xFFFFD700, // Gold
+    0xFF00E676, // Emerald
+    0xFF42A5F5, // Cap Blue
+    0xFFFF1744, // Scarlet
+    0xFFAB47BC, // Cosmic Purple
+    0xFFFF9100  // Amber
+  )
+
+  AlertDialog(
+    onDismissRequest = onDismiss,
+    title = {
+      Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+          imageVector = Icons.Default.CameraAlt,
+          contentDescription = null,
+          tint = BrandPrimary,
+          modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+          text = "Custom User Profile Photo",
+          style = MaterialTheme.typography.titleMedium,
+          fontWeight = FontWeight.Bold
+        )
+      }
+    },
+    text = {
+      Column(
+        modifier = Modifier
+          .fillMaxWidth()
+          .height(420.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+      ) {
+        // Preview Header
+        Card(
+          modifier = Modifier.fillMaxWidth(),
+          shape = RoundedCornerShape(16.dp),
+          colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+          border = BorderStroke(1.dp, Color(selectedColorHex).copy(alpha = 0.6f))
+        ) {
+          Row(
+            modifier = Modifier
+              .fillMaxWidth()
+              .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            UserAvatarView(
+              userProfile = previewProfile,
+              size = 56.dp,
+              isEditable = false
+            )
+            Spacer(modifier = Modifier.width(14.dp))
+            Column(modifier = Modifier.weight(1f)) {
+              Text(
+                text = previewProfile.name,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+              )
+              Text(
+                text = if (!previewProfile.avatarUri.isNullOrBlank()) "Custom Photo Active 📸" else "Theme: ${selectedPreset.replace("_", " ").uppercase()}",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(selectedColorHex),
+                fontWeight = FontWeight.SemiBold
+              )
+            }
+            if (!customImageUrl.isNullOrBlank()) {
+              IconButton(
+                onClick = {
+                  customImageUrl = ""
+                  hasNewPickedImage = false
+                },
+                modifier = Modifier.size(32.dp)
+              ) {
+                Icon(
+                  imageVector = Icons.Default.DeleteOutline,
+                  contentDescription = "Remove Custom Photo",
+                  tint = BrandRose,
+                  modifier = Modifier.size(18.dp)
+                )
+              }
+            }
+          }
+        }
+
+        // Tabs: 0: Avengers & Presets, 1: Upload Photo / URL
+        TabRow(
+          selectedTabIndex = selectedTab,
+          containerColor = MaterialTheme.colorScheme.surface,
+          contentColor = BrandPrimary
+        ) {
+          Tab(
+            selected = selectedTab == 0,
+            onClick = { selectedTab = 0 },
+            text = { Text("Avengers Presets", fontSize = 12.sp, fontWeight = FontWeight.Bold) }
+          )
+          Tab(
+            selected = selectedTab == 1,
+            onClick = { selectedTab = 1 },
+            text = { Text("Upload Photo", fontSize = 12.sp, fontWeight = FontWeight.Bold) }
+          )
+        }
+
+        if (selectedTab == 0) {
+          // Avengers & Aspirant Presets Grid
+          androidx.compose.foundation.lazy.LazyColumn(
+            modifier = Modifier
+              .fillMaxWidth()
+              .weight(1f),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+          ) {
+            items(SampleData.avatarPresets) { preset ->
+              val isSelected = selectedPreset == preset.id && customImageUrl.isBlank()
+              val presetColor = Color(preset.themeColorHex)
+
+              Card(
+                modifier = Modifier
+                  .fillMaxWidth()
+                  .clip(RoundedCornerShape(12.dp))
+                  .clickable {
+                    selectedPreset = preset.id
+                    selectedColorHex = preset.themeColorHex
+                    customImageUrl = "" // Clear custom when picking preset
+                  },
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                  containerColor = if (isSelected) presetColor.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surface
+                ),
+                border = BorderStroke(
+                  if (isSelected) 2.dp else 1.dp,
+                  if (isSelected) presetColor else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                )
+              ) {
+                Row(
+                  modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp),
+                  verticalAlignment = Alignment.CenterVertically
+                ) {
+                  // Icon thumbnail
+                  Box(
+                    modifier = Modifier
+                      .size(38.dp)
+                      .clip(CircleShape)
+                      .background(presetColor.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                  ) {
+                    if (preset.drawableRes != null) {
+                      Image(
+                        painter = painterResource(id = preset.drawableRes),
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp)
+                      )
+                    } else {
+                      Text(text = preset.emoji, fontSize = 20.sp)
+                    }
+                  }
+
+                  Spacer(modifier = Modifier.width(12.dp))
+
+                  Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                      text = preset.label,
+                      style = MaterialTheme.typography.labelLarge,
+                      fontWeight = FontWeight.Bold,
+                      color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                      text = preset.subtitle,
+                      style = MaterialTheme.typography.labelSmall,
+                      color = MaterialTheme.colorScheme.onSurfaceVariant,
+                      fontSize = 11.sp
+                    )
+                  }
+
+                  if (isSelected) {
+                    Icon(
+                      imageVector = Icons.Default.CheckCircle,
+                      contentDescription = "Selected",
+                      tint = presetColor,
+                      modifier = Modifier.size(20.dp)
+                    )
+                  }
+                }
+              }
+            }
+          }
+        } else {
+          // Upload Photo & Custom URL Tab
+          Column(
+            modifier = Modifier
+              .fillMaxWidth()
+              .weight(1f),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+          ) {
+            // Button 1: Pick from Device Gallery
+            Button(
+              onClick = {
+                photoPickerLauncher.launch("image/*")
+              },
+              colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary),
+              shape = RoundedCornerShape(12.dp),
+              modifier = Modifier
+                .fillMaxWidth()
+                .testTag("pick_gallery_photo_button")
+            ) {
+              Icon(
+                imageVector = Icons.Default.PhotoLibrary,
+                contentDescription = null,
+                tint = Color.Black,
+                modifier = Modifier.size(18.dp)
+              )
+              Spacer(modifier = Modifier.width(8.dp))
+              Text("Choose Photo from Device Gallery", color = Color.Black, fontWeight = FontWeight.Bold)
+            }
+
+            Text(
+              text = "— OR PASTE IMAGE URL —",
+              style = MaterialTheme.typography.labelSmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+              modifier = Modifier.align(Alignment.CenterHorizontally),
+              fontWeight = FontWeight.Bold
+            )
+
+            OutlinedTextField(
+              value = customImageUrl,
+              onValueChange = {
+                customImageUrl = it
+              },
+              label = { Text("Profile Image URL (https://...)") },
+              leadingIcon = {
+                Icon(
+                  imageVector = Icons.Default.Link,
+                  contentDescription = null,
+                  tint = BrandPrimary
+                )
+              },
+              singleLine = true,
+              modifier = Modifier
+                .fillMaxWidth()
+                .testTag("profile_image_url_field")
+            )
+
+            Text(
+              text = "💡 Tip: You can select any photo from your phone's storage or paste a direct image URL to personalize your aspirant avatar.",
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+              fontSize = 11.sp
+            )
+          }
+        }
+
+        // Bottom Aura Color Picker Row
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Text(
+            text = "Avatar Aura Ring:",
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+          )
+          Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            colorPalette.forEach { hex ->
+              val color = Color(hex)
+              val isSelected = selectedColorHex == hex
+              Box(
+                modifier = Modifier
+                  .size(24.dp)
+                  .clip(CircleShape)
+                  .background(color)
+                  .border(
+                    if (isSelected) 2.5.dp else 1.dp,
+                    if (isSelected) Color.White else Color.Transparent,
+                    CircleShape
+                  )
+                  .clickable { selectedColorHex = hex }
+              )
+            }
+          }
+        }
+      }
+    },
+    confirmButton = {
+      Button(
+        onClick = {
+          val finalUri = customImageUrl.trim().ifEmpty { null }
+          onSaveAvatar(
+            finalUri,
+            selectedPreset,
+            selectedColorHex,
+            finalUri == null && userProfile.avatarUri != null
+          )
+          Toast.makeText(context, "Profile photo updated! ✨", Toast.LENGTH_SHORT).show()
+          onDismiss()
+        },
+        colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary),
+        modifier = Modifier.testTag("save_avatar_dialog_button")
+      ) {
+        Text("Apply Avatar", color = Color.Black, fontWeight = FontWeight.Bold)
+      }
+    },
+    dismissButton = {
+      TextButton(onClick = onDismiss) {
+        Text("Cancel")
+      }
+    }
+  )
+}
+
+// -------------------------------------------------------------
+// UPGRADED AVENGERS MOTIVATION HERO CARD WITH RICH THEME ART
+// -------------------------------------------------------------
 @Composable
 fun AvengersMotivationCard(
   quote: MotivationalQuote,
@@ -1954,31 +2532,51 @@ fun AvengersMotivationCard(
   val context = LocalContext.current
   val quoteAccentColor = Color(quote.accentColorHex)
 
-  // Animated gradient brush for Avengers heroic atmosphere
+  // Dynamic hero backdrop gradient based on Avenger theme
   val cardBrush = Brush.linearGradient(
     colors = listOf(
-      Color(0xFF141724),
-      Color(0xFF1B1E30),
-      Color(0xFF0F111A)
+      Color(0xFF0E111D),
+      Color(0xFF16192B),
+      Color(0xFF090A12)
     )
   )
+
+  val heroIconRes = when (quote.heroType) {
+    "CAPTAIN_AMERICA" -> R.drawable.ic_hero_shield
+    "IRON_MAN" -> R.drawable.ic_arc_reactor
+    "THOR" -> R.drawable.ic_thor_hammer
+    "DOCTOR_STRANGE" -> R.drawable.ic_doctor_strange
+    "SPIDER_MAN" -> R.drawable.ic_spiderman
+    "INFINITY_GAUNTLET" -> R.drawable.ic_infinity_gauntlet
+    else -> R.drawable.ic_avengers_logo
+  }
 
   Card(
     modifier = modifier
       .fillMaxWidth()
       .testTag("avengers_motivation_card"),
     shape = RoundedCornerShape(22.dp),
-    border = BorderStroke(1.5.dp, quoteAccentColor.copy(alpha = 0.6f)),
+    border = BorderStroke(1.5.dp, quoteAccentColor.copy(alpha = 0.65f)),
     colors = CardDefaults.cardColors(containerColor = Color.Transparent)
   ) {
     Box(
       modifier = Modifier
         .fillMaxWidth()
         .background(cardBrush)
-        .padding(18.dp)
     ) {
+      // 0. AVENGERS HERO ARTWORK WATERMARK IN BACKGROUND
+      AvengersThemeArtWatermark(
+        heroType = quote.heroType,
+        accentColor = quoteAccentColor,
+        modifier = Modifier
+          .align(Alignment.TopEnd)
+          .padding(top = 10.dp, end = 10.dp)
+      )
+
       Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
       ) {
         // 1. Header Row: Avengers Protocol & Arc Reactor Energy
@@ -1987,26 +2585,24 @@ fun AvengersMotivationCard(
           horizontalArrangement = Arrangement.SpaceBetween,
           verticalAlignment = Alignment.CenterVertically
         ) {
-          Row(verticalAlignment = Alignment.CenterVertically) {
+          Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically
+          ) {
             // Superhero / Avengers Icon Badge
             Box(
               modifier = Modifier
-                .size(38.dp)
+                .size(42.dp)
                 .clip(CircleShape)
-                .background(Color(0xFF23283E))
-                .border(1.dp, quoteAccentColor, CircleShape)
-                .padding(6.dp),
+                .background(Color(0xFF1E2235))
+                .border(1.5.dp, quoteAccentColor, CircleShape)
+                .padding(7.dp),
               contentAlignment = Alignment.Center
             ) {
-              val iconRes = when (quote.heroType) {
-                "CAPTAIN_AMERICA" -> R.drawable.ic_hero_shield
-                "IRON_MAN" -> R.drawable.ic_arc_reactor
-                else -> R.drawable.ic_avengers_logo
-              }
               Image(
-                painter = painterResource(id = iconRes),
+                painter = painterResource(id = heroIconRes),
                 contentDescription = "Avengers Hero Symbol",
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(26.dp)
               )
             }
 
@@ -2074,12 +2670,12 @@ fun AvengersMotivationCard(
           }
         }
 
-        // 2. The Motivational Quote Body
+        // 2. The Motivational Quote Body (Framed with semi-transparent frosted card)
         Surface(
           modifier = Modifier.fillMaxWidth(),
-          shape = RoundedCornerShape(14.dp),
-          color = Color(0xFF0A0C14).copy(alpha = 0.75f),
-          border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f))
+          shape = RoundedCornerShape(16.dp),
+          color = Color(0xFF0A0C14).copy(alpha = 0.82f),
+          border = BorderStroke(1.dp, quoteAccentColor.copy(alpha = 0.35f))
         ) {
           Column(
             modifier = Modifier
@@ -2089,7 +2685,7 @@ fun AvengersMotivationCard(
             Row(verticalAlignment = Alignment.Top) {
               Text(
                 text = "“",
-                fontSize = 32.sp,
+                fontSize = 34.sp,
                 lineHeight = 24.sp,
                 fontWeight = FontWeight.Black,
                 color = quoteAccentColor
@@ -2100,12 +2696,12 @@ fun AvengersMotivationCard(
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = Color.White,
-                lineHeight = 20.sp,
+                lineHeight = 21.sp,
                 modifier = Modifier.weight(1f)
               )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Hero / Author Subtitle
             Row(
@@ -2114,12 +2710,20 @@ fun AvengersMotivationCard(
               verticalAlignment = Alignment.CenterVertically
             ) {
               Column(modifier = Modifier.weight(1f)) {
-                Text(
-                  text = "— ${quote.authorOrHero}",
-                  style = MaterialTheme.typography.labelMedium,
-                  fontWeight = FontWeight.Bold,
-                  color = quoteAccentColor
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                  Image(
+                    painter = painterResource(id = heroIconRes),
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp)
+                  )
+                  Spacer(modifier = Modifier.width(4.dp))
+                  Text(
+                    text = quote.authorOrHero,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = quoteAccentColor
+                  )
+                }
                 Text(
                   text = quote.heroRole,
                   style = MaterialTheme.typography.labelSmall,
@@ -2151,7 +2755,7 @@ fun AvengersMotivationCard(
 
                 IconButton(
                   onClick = {
-                    clipboardManager.setText(androidx.compose.ui.text.AnnotatedString("\"${quote.quote}\" — ${quote.authorOrHero}"))
+                    clipboardManager.setText(AnnotatedString("\"${quote.quote}\" — ${quote.authorOrHero}"))
                     Toast.makeText(context, "Quote copied to clipboard! ⚡️", Toast.LENGTH_SHORT).show()
                   },
                   modifier = Modifier.size(32.dp)
@@ -2185,7 +2789,7 @@ fun AvengersMotivationCard(
           modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
-            .background(quoteAccentColor.copy(alpha = 0.12f))
+            .background(quoteAccentColor.copy(alpha = 0.15f))
             .padding(horizontal = 10.dp, vertical = 6.dp),
           verticalAlignment = Alignment.CenterVertically
         ) {
@@ -2200,11 +2804,11 @@ fun AvengersMotivationCard(
             text = quote.subtext,
             style = MaterialTheme.typography.bodySmall,
             fontSize = 11.sp,
-            color = Color.White.copy(alpha = 0.9f)
+            color = Color.White.copy(alpha = 0.95f)
           )
         }
 
-        // 4. Quick Action Navigation Row
+        // 4. Quick Action Navigation Row & Theme Indicator
         Row(
           modifier = Modifier.fillMaxWidth(),
           horizontalArrangement = Arrangement.SpaceBetween,
@@ -2253,7 +2857,7 @@ fun AvengersMotivationCard(
                 .padding(horizontal = 10.dp, vertical = 6.dp)
             ) {
               Text(
-                text = "⚡️ New Battlecry",
+                text = "⚡️ Next Battlecry",
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = quoteAccentColor
@@ -2263,7 +2867,7 @@ fun AvengersMotivationCard(
 
           TextButton(onClick = onOpenDeck) {
             Text(
-              text = "View All Quotes 📜",
+              text = "Theme Arsenal 📜",
               style = MaterialTheme.typography.labelSmall,
               fontWeight = FontWeight.Bold,
               color = Color.White
@@ -2304,7 +2908,7 @@ fun AvengersQuotesDeckDialog(
           Image(
             painter = painterResource(id = R.drawable.ic_avengers_logo),
             contentDescription = null,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(26.dp)
           )
           Spacer(modifier = Modifier.width(8.dp))
           Text(
@@ -2341,7 +2945,7 @@ fun AvengersQuotesDeckDialog(
           }
         }
 
-        // Quotes Scroll List
+        // Quotes Scroll List with Avengers Theme Artwork on each card
         androidx.compose.foundation.lazy.LazyColumn(
           modifier = Modifier
             .fillMaxWidth()
@@ -2350,105 +2954,127 @@ fun AvengersQuotesDeckDialog(
         ) {
           items(filteredQuotes, key = { it.id }) { item ->
             val accent = Color(item.accentColorHex)
+            val heroIcon = when (item.heroType) {
+              "CAPTAIN_AMERICA" -> R.drawable.ic_hero_shield
+              "IRON_MAN" -> R.drawable.ic_arc_reactor
+              "THOR" -> R.drawable.ic_thor_hammer
+              "DOCTOR_STRANGE" -> R.drawable.ic_doctor_strange
+              "SPIDER_MAN" -> R.drawable.ic_spiderman
+              "INFINITY_GAUNTLET" -> R.drawable.ic_infinity_gauntlet
+              else -> R.drawable.ic_avengers_logo
+            }
+
             Card(
               modifier = Modifier.fillMaxWidth(),
               shape = RoundedCornerShape(14.dp),
               colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-              border = BorderStroke(1.dp, accent.copy(alpha = 0.4f))
+              border = BorderStroke(1.dp, accent.copy(alpha = 0.5f))
             ) {
-              Column(
-                modifier = Modifier
-                  .fillMaxWidth()
-                  .padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-              ) {
-                Row(
-                  modifier = Modifier.fillMaxWidth(),
-                  horizontalArrangement = Arrangement.SpaceBetween,
-                  verticalAlignment = Alignment.CenterVertically
+              Box(modifier = Modifier.fillMaxWidth()) {
+                // Subtle hero watermark on list item
+                Image(
+                  painter = painterResource(id = heroIcon),
+                  contentDescription = null,
+                  modifier = Modifier
+                    .size(70.dp)
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 6.dp, bottom = 6.dp)
+                    .alpha(0.12f),
+                  contentScale = ContentScale.Fit
+                )
+
+                Column(
+                  modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                  verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                  Row(verticalAlignment = Alignment.CenterVertically) {
-                    val heroIcon = when (item.heroType) {
-                      "CAPTAIN_AMERICA" -> R.drawable.ic_hero_shield
-                      "IRON_MAN" -> R.drawable.ic_arc_reactor
-                      else -> R.drawable.ic_avengers_logo
+                  Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                  ) {
+                    Row(
+                      modifier = Modifier.weight(1f),
+                      verticalAlignment = Alignment.CenterVertically
+                    ) {
+                      Image(
+                        painter = painterResource(id = heroIcon),
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                      )
+                      Spacer(modifier = Modifier.width(6.dp))
+                      Text(
+                        text = item.authorOrHero,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = accent
+                      )
                     }
-                    Image(
-                      painter = painterResource(id = heroIcon),
-                      contentDescription = null,
-                      modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                      text = item.authorOrHero,
-                      style = MaterialTheme.typography.labelMedium,
-                      fontWeight = FontWeight.Bold,
-                      color = accent
-                    )
-                  }
 
-                  Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(
-                      onClick = {
-                        com.example.notification.NotificationHelper.sendStudyReminder(
-                          context = context,
-                          reminderType = com.example.data.ReminderType.AVENGERS_BATTLECRY,
-                          isTest = true
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                      IconButton(
+                        onClick = {
+                          com.example.notification.NotificationHelper.sendStudyReminder(
+                            context = context,
+                            reminderType = com.example.data.ReminderType.AVENGERS_BATTLECRY,
+                            isTest = true
+                          )
+                          Toast.makeText(context, "Dispatched to notification bar! 🔔", Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier.size(28.dp)
+                      ) {
+                        Icon(
+                          imageVector = Icons.Default.NotificationsActive,
+                          contentDescription = "Notify",
+                          tint = accent,
+                          modifier = Modifier.size(14.dp)
                         )
-                        Toast.makeText(context, "Dispatched to notification bar! 🔔", Toast.LENGTH_SHORT).show()
-                      },
-                      modifier = Modifier.size(28.dp)
-                    ) {
-                      Icon(
-                        imageVector = Icons.Default.NotificationsActive,
-                        contentDescription = "Notify",
-                        tint = accent,
-                        modifier = Modifier.size(14.dp)
-                      )
-                    }
+                      }
 
-                    IconButton(
-                      onClick = {
-                        clipboardManager.setText(androidx.compose.ui.text.AnnotatedString("\"${item.quote}\" — ${item.authorOrHero}"))
-                        Toast.makeText(context, "Quote copied! ⚡️", Toast.LENGTH_SHORT).show()
-                      },
-                      modifier = Modifier.size(28.dp)
-                    ) {
-                      Icon(
-                        imageVector = Icons.Default.ContentCopy,
-                        contentDescription = "Copy",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(14.dp)
-                      )
-                    }
+                      IconButton(
+                        onClick = {
+                          clipboardManager.setText(AnnotatedString("\"${item.quote}\" — ${item.authorOrHero}"))
+                          Toast.makeText(context, "Quote copied! ⚡️", Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier.size(28.dp)
+                      ) {
+                        Icon(
+                          imageVector = Icons.Default.ContentCopy,
+                          contentDescription = "Copy",
+                          tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                          modifier = Modifier.size(14.dp)
+                        )
+                      }
 
-                    IconButton(
-                      onClick = { onToggleBookmark(item.id) },
-                      modifier = Modifier.size(28.dp)
-                    ) {
-                      Icon(
-                        imageVector = if (item.isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
-                        contentDescription = "Bookmark",
-                        tint = if (item.isBookmarked) accent else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(16.dp)
-                      )
+                      IconButton(
+                        onClick = { onToggleBookmark(item.id) },
+                        modifier = Modifier.size(28.dp)
+                      ) {
+                        Icon(
+                          imageVector = if (item.isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                          contentDescription = "Bookmark",
+                          tint = if (item.isBookmarked) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                          modifier = Modifier.size(16.dp)
+                        )
+                      }
                     }
                   }
+
+                  Text(
+                    text = "\"${item.quote}\"",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                  )
+
+                  Text(
+                    text = item.subtext,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                  )
                 }
-
-                Text(
-                  text = "\"${item.quote}\"",
-                  style = MaterialTheme.typography.bodySmall,
-                  fontWeight = FontWeight.Medium,
-                  color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Text(
-                  text = item.subtext,
-                  style = MaterialTheme.typography.labelSmall,
-                  fontSize = 10.sp,
-                  color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
               }
             }
           }

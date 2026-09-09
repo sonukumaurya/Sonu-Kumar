@@ -60,6 +60,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.app.Application
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ui.screens.CollegesAndMentorsScreen
 import com.example.ui.screens.DashboardScreen
@@ -86,7 +90,15 @@ class MainActivity : ComponentActivity() {
     NotificationHelper.createNotificationChannel(applicationContext)
 
     setContent {
-      val viewModel: JeePrepViewModel = viewModel()
+      val context = LocalContext.current
+      val viewModel: JeePrepViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+          override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            @Suppress("UNCHECKED_CAST")
+            return JeePrepViewModel(context.applicationContext as Application) as T
+          }
+        }
+      )
       val uiState by viewModel.uiState.collectAsState()
 
       JEEPrepTheme(themeMode = uiState.themeMode) {

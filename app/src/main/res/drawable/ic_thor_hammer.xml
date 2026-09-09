@@ -1,0 +1,51 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <!-- Lightning Rays in Background -->
+    <path
+        android:pathData="M18,12 L32,38 L24,42 L42,66 M78,12 L64,38 L72,42 L54,66 M48,4 L48,22"
+        android:strokeColor="#00E5FF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    
+    <!-- Mjolnir Hammer Head -->
+    <path
+        android:pathData="M24,28 L72,28 L74,32 L74,52 L72,56 L24,56 L22,52 L22,32 Z"
+        android:fillColor="#ECEFF1"
+        android:strokeColor="#90A4AE"
+        android:strokeWidth="2" />
+    
+    <!-- Hammer Inscription Line / Norse Runes -->
+    <path
+        android:pathData="M28,42 L68,42"
+        android:strokeColor="#00E5FF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M38,34 L48,34 L48,50 M58,34 L58,50"
+        android:strokeColor="#78909C"
+        android:strokeWidth="1.5" />
+    
+    <!-- Handle -->
+    <path
+        android:pathData="M44,56 L44,84 L52,84 L52,56 Z"
+        android:fillColor="#8D6E63"
+        android:strokeColor="#5D4037"
+        android:strokeWidth="1.5" />
+    
+    <!-- Handle Grip Wraps -->
+    <path
+        android:pathData="M44,62 L52,64 M44,70 L52,72 M44,78 L52,80"
+        android:strokeColor="#D7CCC8"
+        android:strokeWidth="1.5" />
+    
+    <!-- Wrist Strap / Pommel -->
+    <path
+        android:pathData="M48,84 C48,92 56,92 56,86"
+        android:strokeColor="#8D6E63"
+        android:strokeWidth="2"
+        android:strokeLineCap="round" />
+</vector>

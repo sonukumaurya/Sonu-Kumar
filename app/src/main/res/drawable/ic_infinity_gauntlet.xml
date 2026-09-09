@@ -1,0 +1,44 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <!-- Gauntlet Fist Silhouette / Base -->
+    <path
+        android:pathData="M28,88 L26,56 L34,44 L40,32 L56,32 L64,44 L70,56 L68,88 Z"
+        android:fillColor="#FFB300"
+        android:strokeColor="#FFA000"
+        android:strokeWidth="2" />
+    
+    <!-- Armor segment lines -->
+    <path
+        android:pathData="M30,68 L66,68 M34,54 L62,54 M38,42 L58,42"
+        android:strokeColor="#FF8F00"
+        android:strokeWidth="2" />
+    
+    <!-- 6 Infinity Stones Glowing on Knuckles & Palm -->
+    <!-- Mind Stone (Center Gold) -->
+    <path
+        android:pathData="M48,52 A5,5 0 1 0 48.01,52"
+        android:fillColor="#FFEE58" />
+    <!-- Space Stone (Blue) -->
+    <path
+        android:pathData="M36,36 A3.5,3.5 0 1 0 36.01,36"
+        android:fillColor="#29B6F6" />
+    <!-- Reality Stone (Red) -->
+    <path
+        android:pathData="M44,34 A3.5,3.5 0 1 0 44.01,34"
+        android:fillColor="#EF5350" />
+    <!-- Power Stone (Purple) -->
+    <path
+        android:pathData="M52,34 A3.5,3.5 0 1 0 52.01,34"
+        android:fillColor="#AB47BC" />
+    <!-- Time Stone (Green) -->
+    <path
+        android:pathData="M60,36 A3.5,3.5 0 1 0 60.01,36"
+        android:fillColor="#66BB6A" />
+    <!-- Soul Stone (Orange) -->
+    <path
+        android:pathData="M30,50 A3.5,3.5 0 1 0 30.01,50"
+        android:fillColor="#FFA726" />
+</vector>

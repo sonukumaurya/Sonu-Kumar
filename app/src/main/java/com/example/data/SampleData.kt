@@ -767,6 +767,81 @@ object SampleData {
     FormulaCard("f16", SubjectType.MATHEMATICS, "Complex Numbers", "Distance and Circle Representation", "|z - z0| = r  &  arg((z - z1)/(z - z2)) = θ", "Represents locus of z: circle of radius r centered at z0; circle arc subtending angle θ.", "z = x + iy", true)
   )
 
+  val savedFormulaSheets: List<SavedFormulaSheet> = listOf(
+    SavedFormulaSheet(
+      id = "sheet_phy_mech",
+      title = "Physics Mechanics & Rotational Super Sheet",
+      subject = SubjectType.PHYSICS,
+      description = "Complete formula reference for 1D/2D Kinematics, Newton's Laws, Work-Energy, Center of Mass & Moment of Inertia.",
+      formulaCount = 5,
+      formulaIds = listOf("f1", "f2"),
+      isDownloadedOffline = true,
+      category = "Mechanics",
+      lastUpdatedFormatted = "Cached in Room DB",
+      downloadSizeKb = 28
+    ),
+    SavedFormulaSheet(
+      id = "sheet_phy_elec_optics",
+      title = "Physics Electrodynamics & Optics Vault",
+      subject = SubjectType.PHYSICS,
+      description = "High-yield formulas for Drift Velocity, Ohm's Law, Lens Maker's Equation, de Broglie wavelength & Electric Fields.",
+      formulaCount = 4,
+      formulaIds = listOf("f3", "f4", "f5", "f6"),
+      isDownloadedOffline = true,
+      category = "Electrodynamics",
+      lastUpdatedFormatted = "Cached in Room DB",
+      downloadSizeKb = 34
+    ),
+    SavedFormulaSheet(
+      id = "sheet_chem_physical",
+      title = "Physical Chemistry High-Yield Compendium",
+      subject = SubjectType.CHEMISTRY,
+      description = "Essential formulas for Nernst Equation, Chemical Kinetics, Gibbs Free Energy & Colligative Solutions.",
+      formulaCount = 3,
+      formulaIds = listOf("f7", "f8", "f9"),
+      isDownloadedOffline = true,
+      category = "Physical Chemistry",
+      lastUpdatedFormatted = "Cached in Room DB",
+      downloadSizeKb = 26
+    ),
+    SavedFormulaSheet(
+      id = "sheet_chem_inorg_org",
+      title = "Inorganic & Organic Reactions Summary Sheet",
+      subject = SubjectType.CHEMISTRY,
+      description = "Coordination spin-only magnetic moments, Crystal Field Theory, Aldol Condensation & Named Reaction reagents.",
+      formulaCount = 2,
+      formulaIds = listOf("f10", "f11"),
+      isDownloadedOffline = true,
+      category = "Reactions & Reagents",
+      lastUpdatedFormatted = "Cached in Room DB",
+      downloadSizeKb = 22
+    ),
+    SavedFormulaSheet(
+      id = "sheet_math_calculus",
+      title = "Mathematics Calculus & Definite Integration Sheet",
+      subject = SubjectType.MATHEMATICS,
+      description = "King's Rule of Definite Integration, Leibnitz Rule under Integral sign, L'Hopital shortcuts & Area under curves.",
+      formulaCount = 2,
+      formulaIds = listOf("f12", "f13"),
+      isDownloadedOffline = true,
+      category = "Calculus",
+      lastUpdatedFormatted = "Cached in Room DB",
+      downloadSizeKb = 30
+    ),
+    SavedFormulaSheet(
+      id = "sheet_math_vectors_3d",
+      title = "Mathematics Vectors, 3D & Complex Numbers Sheet",
+      subject = SubjectType.MATHEMATICS,
+      description = "Shortest distance between skew lines, Vector Triple Product (BAC-CAB), Euler form & Argand plane loci.",
+      formulaCount = 3,
+      formulaIds = listOf("f14", "f15", "f16"),
+      isDownloadedOffline = true,
+      category = "Geometry & Vectors",
+      lastUpdatedFormatted = "Cached in Room DB",
+      downloadSizeKb = 36
+    )
+  )
+
   val colleges: List<College> = listOf(
     College(
       id = "iitb",
@@ -1145,6 +1220,89 @@ object SampleData {
       targetScoreMain = 135,
       targetScoreAdv = 110,
       iconEmoji = "🚀"
+    )
+  )
+
+  val avatarPresets: List<AvatarPreset> = listOf(
+    AvatarPreset(
+      id = "iron_man",
+      label = "Iron Man Arc Core",
+      subtitle = "Mark 85 Nano-Reactor",
+      drawableRes = com.example.R.drawable.ic_arc_reactor,
+      emoji = "⚡️",
+      themeColorHex = 0xFF00E5FF
+    ),
+    AvatarPreset(
+      id = "cap",
+      label = "Captain America",
+      subtitle = "Vibranium Star Shield",
+      drawableRes = com.example.R.drawable.ic_hero_shield,
+      emoji = "🛡️",
+      themeColorHex = 0xFF42A5F5
+    ),
+    AvatarPreset(
+      id = "thor",
+      label = "Thor Odinson",
+      subtitle = "Mjolnir Thunder Surge",
+      drawableRes = com.example.R.drawable.ic_thor_hammer,
+      emoji = "⚡️",
+      themeColorHex = 0xFF00E5FF
+    ),
+    AvatarPreset(
+      id = "strange",
+      label = "Doctor Strange",
+      subtitle = "Mystic Mandala Runes",
+      drawableRes = com.example.R.drawable.ic_doctor_strange,
+      emoji = "🔮",
+      themeColorHex = 0xFFFFB300
+    ),
+    AvatarPreset(
+      id = "spiderman",
+      label = "Spider-Man",
+      subtitle = "Integrated Web Suit",
+      drawableRes = com.example.R.drawable.ic_spiderman,
+      emoji = "🕷️",
+      themeColorHex = 0xFFFF1744
+    ),
+    AvatarPreset(
+      id = "infinity_gauntlet",
+      label = "Infinity Core",
+      subtitle = "All 6 Cosmic Stones",
+      drawableRes = com.example.R.drawable.ic_infinity_gauntlet,
+      emoji = "💎",
+      themeColorHex = 0xFFAB47BC
+    ),
+    AvatarPreset(
+      id = "avengers_assemble",
+      label = "Avengers Assemble",
+      subtitle = "Earth's Mightiest Logo",
+      drawableRes = com.example.R.drawable.ic_avengers_logo,
+      emoji = "⭐",
+      themeColorHex = 0xFFFFD700
+    ),
+    AvatarPreset(
+      id = "aspirant_boy",
+      label = "JEE Warrior (Sonu)",
+      subtitle = "Top Rank Aiming Scholar",
+      drawableRes = null,
+      emoji = "👨‍🎓",
+      themeColorHex = 0xFF4CAF50
+    ),
+    AvatarPreset(
+      id = "aspirant_girl",
+      label = "IIT Aspirant Star",
+      subtitle = "AIR 1 Mission",
+      drawableRes = null,
+      emoji = "👩‍🎓",
+      themeColorHex = 0xFFFF4081
+    ),
+    AvatarPreset(
+      id = "initials",
+      label = "Custom Initials (SK)",
+      subtitle = "Minimal Dynamic Monogram",
+      drawableRes = null,
+      emoji = "✨",
+      themeColorHex = 0xFF7C4DFF
     )
   )
 

@@ -1,0 +1,48 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <!-- Outer Mystic Mandala Ring -->
+    <path
+        android:pathData="M48,8 A40,40 0 1 0 48.01,8"
+        android:strokeColor="#FFB300"
+        android:strokeWidth="2" />
+    
+    <!-- Secondary Outer Ring with Glow -->
+    <path
+        android:pathData="M48,16 A32,32 0 1 0 48.01,16"
+        android:strokeColor="#FFD54F"
+        android:strokeWidth="1.5" />
+
+    <!-- Square 1 rotated 45 deg -->
+    <path
+        android:pathData="M48,16 L80,48 L48,80 L16,48 Z"
+        android:strokeColor="#FFB300"
+        android:strokeWidth="1.5" />
+    
+    <!-- Square 2 straight -->
+    <path
+        android:pathData="M25,25 L71,25 L71,71 L25,71 Z"
+        android:strokeColor="#FFCA28"
+        android:strokeWidth="1.5" />
+
+    <!-- Center Eye of Agamotto Shell -->
+    <path
+        android:pathData="M30,48 C36,36 60,36 66,48 C60,60 36,60 30,48 Z"
+        android:fillColor="#37474F"
+        android:strokeColor="#FFD700"
+        android:strokeWidth="2" />
+    
+    <!-- Green Time Stone Center Glow -->
+    <path
+        android:pathData="M48,43 A5,5 0 1 0 48.01,43"
+        android:fillColor="#00E676" />
+    
+    <!-- Geometric Mystic Runes Rays -->
+    <path
+        android:pathData="M48,8 L48,16 M48,80 L48,88 M8,48 L16,48 M80,48 L88,48 M20,20 L26,26 M70,70 L76,76 M20,76 L26,70 M70,26 L76,20"
+        android:strokeColor="#FFE082"
+        android:strokeWidth="2"
+        android:strokeLineCap="round" />
+</vector>
