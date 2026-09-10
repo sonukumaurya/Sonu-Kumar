@@ -24,18 +24,19 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Generate Debug Keystore
+    - name: Generate Debug Keystore (Special Method)
       run: |
+        keytool -genkey -v -keystore debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Sonu, OU=JEE Prep, O=Sonu App, L=Bihar, S=Bihar, C=IN"
         mkdir -p app/src/debug
-        keytool -genkey -v -keystore app/src/debug/debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Sonu, OU=JEE Prep, O=Sonu App, L=Bihar, S=Bihar, C=IN"
+        cp debug.keystore app/
+        cp debug.keystore app/src/debug/
 
     - name: Build Debug APK (Bypass Firebase)
-      run: ./gradlew assembleDebug -x processDebugGoogleServices
+      run: ./gradlew assembleDebug -x processDebugGoogleServices -Djava.awt.headless=true
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: JEE-Prep-App
         path: app/build/outputs/apk/debug/*.apk
-
-
+        
