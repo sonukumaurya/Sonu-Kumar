@@ -24,21 +24,18 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Create dummy google-services.json
-      run: |
-        echo '{"project_info":{"project_number":"1","project_id":"dummy"},"client":[{"client_info":{"mobilesdk_app_id":"1:1:android:1","android_client_info":{"package_name":"com.aistudio.jeeprep.uqpzmx"}},"oauth_client":[],"api_key":[],"services":{"appinvite_service":{"other_platform_oauth_client":[]}}}],"configuration_version":"1"}' > app/google-services.json
-
     - name: Generate Debug Keystore
       run: |
         mkdir -p app/src/debug
         keytool -genkey -v -keystore app/src/debug/debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Sonu, OU=JEE Prep, O=Sonu App, L=Bihar, S=Bihar, C=IN"
 
-    - name: Build Debug APK
-      run: ./gradlew assembleDebug
+    - name: Build Debug APK (Bypass Firebase)
+      run: ./gradlew assembleDebug -x processDebugGoogleServices
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: JEE-Prep-App
         path: app/build/outputs/apk/debug/*.apk
-        
+
+
