@@ -80,7 +80,6 @@ import com.example.data.TopicFilterMode
 import com.example.data.WeightageLevel
 import com.example.ui.components.ChapterCardItem
 import com.example.ui.components.FlatTopicChecklistItem
-import com.example.ui.components.FormulaCardItem
 import com.example.ui.theme.BrandAccentGold
 import com.example.ui.theme.BrandEmerald
 import com.example.ui.theme.BrandPrimary
@@ -565,7 +564,7 @@ fun SyllabusScreen(
     )
   }
 
-  // Formula Quick Drawer / Dialog
+  // Formula Quick Drawer / Dialog (Now with Textbook Math Rendering)
   if (selectedChapterForFormulas != null) {
     val chapter = selectedChapterForFormulas!!
     val relatedFormulas = uiState.formulas.filter { f ->
@@ -598,26 +597,30 @@ fun SyllabusScreen(
         }
       },
       text = {
-        Column(
+        LazyColumn(
           modifier = Modifier.fillMaxWidth(),
           verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-          Text(
-            text = "⚡️ High-Yield Cheat Sheet",
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold,
-            color = BrandAccentGold
-          )
+          item {
+            Text(
+              text = "⚡️ High-Yield Cheat Sheet",
+              style = MaterialTheme.typography.labelLarge,
+              fontWeight = FontWeight.Bold,
+              color = BrandAccentGold
+            )
+          }
 
           if (relatedFormulas.isEmpty()) {
-            Text(
-              text = "Formula cheat sheet for this chapter is being prepared.",
-              style = MaterialTheme.typography.bodySmall,
-              color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            item {
+              Text(
+                text = "Formula cheat sheet for this chapter is being prepared.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+              )
+            }
           } else {
-            relatedFormulas.forEach { card ->
-              FormulaCardItem(
+            items(relatedFormulas) { card ->
+              TextbookFormulaCardItem(
                 card = card,
                 onToggleBookmark = { viewModel.toggleFormulaBookmark(card.id) }
               )
