@@ -307,7 +307,7 @@ fun DashboardScreen(
       )
     }
 
-    // 6. Flash Formula of the Day Card (rotates automatically every day)
+    // 6. Flash Formula of the Day Card (rotates daily + renders in Textbook Math style)
     item {
       if (uiState.formulas.isNotEmpty()) {
         val dailyFormula = uiState.formulas[kotlin.math.abs(todayDayIndex) % uiState.formulas.size]
@@ -558,23 +558,19 @@ fun FlashFormulaCard(
         color = MaterialTheme.colorScheme.onSurface
       )
 
-      Spacer(modifier = Modifier.height(6.dp))
+      Spacer(modifier = Modifier.height(8.dp))
 
       Box(
         modifier = Modifier
           .fillMaxWidth()
-          .clip(RoundedCornerShape(8.dp))
+          .clip(RoundedCornerShape(10.dp))
           .background(MaterialTheme.colorScheme.surfaceVariant)
-          .padding(horizontal = 14.dp, vertical = 10.dp)
+          .padding(horizontal = 14.dp, vertical = 12.dp)
       ) {
-        Text(
-          text = formula.formula,
-          style = MaterialTheme.typography.bodyMedium,
-          fontSize = 13.sp,
-          lineHeight = 19.sp,
-          fontWeight = FontWeight.ExtraBold,
-          fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-          color = formula.subject.color
+        TextbookMathFormula(
+          rawFormula = formula.formula,
+          textColor = formula.subject.color,
+          fontSize = 18.sp
         )
       }
     }
