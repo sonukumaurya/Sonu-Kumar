@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -66,19 +68,26 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.BaselineShift
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.FormulaCard
 import com.example.data.SavedFormulaSheet
 import com.example.data.SubjectType
-import com.example.ui.components.FormulaCardItem
 import com.example.ui.theme.BrandAccentGold
 import com.example.ui.theme.BrandEmerald
 import com.example.ui.theme.BrandPrimary
@@ -380,7 +389,7 @@ fun FormulaHubScreen(
           }
         }
 
-        // Formulas List
+        // Formulas List with Textbook Math Formatting
         if (filteredFormulas.isEmpty()) {
           item {
             Box(
@@ -398,7 +407,7 @@ fun FormulaHubScreen(
           }
         } else {
           items(filteredFormulas) { card ->
-            FormulaCardItem(
+            TextbookFormulaCardItem(
               card = card,
               onToggleBookmark = { viewModel.toggleFormulaBookmark(card.id) }
             )
@@ -605,6 +614,371 @@ fun FormulaHubScreen(
   }
 }
 
+/**
+ * Textbook-styled Formula Card that renders formulas like a real book (e.g., μ_spin = √n(n + 2) BM)
+ */
+@Composable
+fun TextbookFormulaCardItem(
+  card: FormulaCard,
+  onToggleBookmark: () -> Unit,
+  modifier: Modifier = Modifier
+) {
+  val clipboardManager = LocalClipboardManager.current
+  val context = LocalContext.current
+
+  Card(
+    modifier = modifier
+      .fillMaxWidth()
+      .testTag("formula_card_${card.id}"),
+    shape = RoundedCornerShape(18.dp),
+    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+  ) {
+    Column(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(16.dp)
+    ) {
+      // Top Row: Subject Pill + Topic + Offline Cached + Copy & Bookmark
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Row(
+          modifier = Modifier.weight(1f),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+          Box(
+            modifier = Modifier
+              .clip(RoundedCornerShape(6.dp))
+              .background(card.subject.color.copy(alpha = 0.16f))
+              .padding(horizontal = 8.dp, vertical = 3.dp)
+          ) {
+            Text(
+              text = card.subject.displayName,
+              style = MaterialTheme.typography.labelSmall,
+              fontWeight = FontWeight.Bold,
+              color = card.subject.color
+            )
+          }
+
+          Text(
+            text = card.topic,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1
+          )
+        }
+
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+          Box(
+            modifier = Modifier
+              .clip(RoundedCornerShape(6.dp))
+              .background(BrandEmerald.copy(alpha = 0.14f))
+              .padding(horizontal = 6.dp, vertical = 2.dp)
+          ) {
+            Text(
+              text = "Offline Cached",
+              style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+              fontWeight = FontWeight.SemiBold,
+              color = BrandEmerald
+            )
+          }
+
+          IconButton(
+            onClick = {
+              clipboardManager.setText(AnnotatedString("${card.title}: ${card.formula}"))
+              Toast.makeText(context, "Formula copied!", Toast.LENGTH_SHORT).show()
+            },
+            modifier = Modifier.size(28.dp)
+          ) {
+            Icon(
+              imageVector = Icons.Default.ContentCopy,
+              contentDescription = "Copy Formula",
+              tint = MaterialTheme.colorScheme.onSurfaceVariant,
+              modifier = Modifier.size(16.dp)
+            )
+          }
+
+          IconButton(
+            onClick = onToggleBookmark,
+            modifier = Modifier.size(28.dp)
+          ) {
+            Icon(
+              imageVector = if (card.isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+              contentDescription = "Bookmark",
+              tint = if (card.isBookmarked) BrandAccentGold else MaterialTheme.colorScheme.onSurfaceVariant,
+              modifier = Modifier.size(18.dp)
+            )
+          }
+        }
+      }
+
+      Spacer(modifier = Modifier.height(10.dp))
+
+      // Formula Title
+      Text(
+        text = card.title,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onSurface
+      )
+
+      Spacer(modifier = Modifier.height(10.dp))
+
+      // Textbook Math Box
+      Box(
+        modifier = Modifier
+          .fillMaxWidth()
+          .clip(RoundedCornerShape(12.dp))
+          .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f))
+          .padding(horizontal = 16.dp, vertical = 14.dp)
+      ) {
+        TextbookMathFormula(
+          rawFormula = card.formula,
+          textColor = card.subject.color,
+          fontSize = 19.sp
+        )
+      }
+
+      Spacer(modifier = Modifier.height(10.dp))
+
+      // Explanation with formatted math subscripts/superscripts
+      Text(
+        text = formatMathAnnotatedString(card.explanation, subScale = 10.sp, italicizeSingleVars = false),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        lineHeight = 20.sp
+      )
+
+      if (card.unitsAndConstants.isNotBlank()) {
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+          text = formatMathAnnotatedString("💡 ${card.unitsAndConstants}", subScale = 9.sp, italicizeSingleVars = false),
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
+        )
+      }
+    }
+  }
+}
+
+private sealed class MathSegment {
+  data class Plain(val text: String) : MathSegment()
+  data class Sqrt(val radicand: String) : MathSegment()
+}
+
+private fun splitBySqrt(input: String): List<MathSegment> {
+  val result = mutableListOf<MathSegment>()
+  var index = 0
+  while (index < input.length) {
+    val sqrtPos = input.indexOf("sqrt(", startIndex = index, ignoreCase = true)
+    if (sqrtPos == -1) {
+      result.add(MathSegment.Plain(input.substring(index)))
+      break
+    }
+    if (sqrtPos > index) {
+      result.add(MathSegment.Plain(input.substring(index, sqrtPos)))
+    }
+    val openParen = sqrtPos + 4
+    var depth = 0
+    var closeParen = -1
+    for (i in openParen until input.length) {
+      when (input[i]) {
+        '(' -> depth++
+        ')' -> {
+          depth--
+          if (depth == 0) {
+            closeParen = i
+            break
+          }
+        }
+      }
+    }
+    if (closeParen != -1) {
+      val inside = input.substring(openParen + 1, closeParen)
+      result.add(MathSegment.Sqrt(inside))
+      index = closeParen + 1
+    } else {
+      result.add(MathSegment.Plain(input.substring(sqrtPos)))
+      break
+    }
+  }
+  return result
+}
+
+fun preprocessMathText(raw: String): String {
+  var s = raw
+  s = s.replace("μ_s ", "μ_spin ")
+  s = s.replace("μ_s=", "μ_spin=")
+  s = s.replace(Regex("--\\(([^)]+)\\)-->"), " ──($1)──► ")
+  s = s.replace("-->", " ──► ")
+  s = s.replace("->", " → ")
+  s = s.replace("<=>", " ⇌ ")
+  s = s.replace("<=", " ≤ ")
+  s = s.replace(">=", " ≥ ")
+  s = s.replace("!=", " ≠ ")
+  s = s.replace("+-", "±")
+  // Clean up programmer '*' into textbook implicit multiplication or middle dot
+  s = s.replace(Regex("([a-zA-Z0-9_)])\\s*\\*\\s*\\("), "$1(")
+  s = s.replace(Regex("\\)\\s*\\*\\s*([a-zA-Z(])"), ") $1")
+  s = s.replace(Regex("([0-9])\\s*\\*\\s*([a-zA-ZμλθπΔ])"), "$1$2")
+  s = s.replace(" * ", " · ")
+  s = s.replace("*", "·")
+  // Make log10 / log2 use subscript notation
+  s = s.replace("log10", "log_10")
+  s = s.replace("log2", "log_2")
+  return s
+}
+
+fun formatMathAnnotatedString(
+  raw: String,
+  subScale: TextUnit = 13.sp,
+  italicizeSingleVars: Boolean = true
+): AnnotatedString {
+  val cleaned = preprocessMathText(raw)
+  return buildAnnotatedString {
+    var i = 0
+    while (i < cleaned.length) {
+      val ch = cleaned[i]
+      if (ch == '_' || ch == '^') {
+        val shift = if (ch == '_') BaselineShift.Subscript else BaselineShift.Superscript
+        i++
+        if (i < cleaned.length && cleaned[i] == '(') {
+          val start = i + 1
+          var depth = 1
+          i++
+          while (i < cleaned.length && depth > 0) {
+            if (cleaned[i] == '(') depth++
+            else if (cleaned[i] == ')') depth--
+            i++
+          }
+          val content = cleaned.substring(start, (i - 1).coerceAtLeast(start))
+          withStyle(SpanStyle(baselineShift = shift, fontSize = subScale, fontStyle = FontStyle.Normal)) {
+            append(content)
+          }
+        } else {
+          val start = i
+          while (i < cleaned.length && (cleaned[i].isLetterOrDigit() || cleaned[i] == '/' || cleaned[i] == '-' || cleaned[i] == '+')) {
+            // Stop at '-' or '+' if it is after at least 1 char and looks like a binary operator with spaces
+            if ((cleaned[i] == '-' || cleaned[i] == '+') && i > start) break
+            i++
+          }
+          val content = cleaned.substring(start, i)
+          withStyle(SpanStyle(baselineShift = shift, fontSize = subScale, fontStyle = FontStyle.Normal)) {
+            append(content)
+          }
+        }
+      } else if (ch.isDigit() && i > 0 && cleaned[i - 1].isLetter() && (i < 2 || !cleaned[i - 2].isDigit())) {
+        // Chemical formula subscript like CH2, H2O, SO4
+        val start = i
+        while (i < cleaned.length && cleaned[i].isDigit()) {
+          i++
+        }
+        withStyle(SpanStyle(baselineShift = BaselineShift.Subscript, fontSize = subScale, fontStyle = FontStyle.Normal)) {
+          append(cleaned.substring(start, i))
+        }
+      } else if (italicizeSingleVars && (ch.isLetter() || ch == 'μ' || ch == 'λ' || ch == 'θ')) {
+        val start = i
+        while (i < cleaned.length && cleaned[i].isLetter()) {
+          i++
+        }
+        val word = cleaned.substring(start, i)
+        val isSingleVar = word.length == 1 && word[0] !in listOf('R', 'C', 'H', 'O', 'N', 'S', 'P', 'K', 'I', 'F', 'B', 'V', 'W', 'U', 'Y')
+        if (isSingleVar || word == "μ") {
+          withStyle(SpanStyle(fontStyle = FontStyle.Italic)) {
+            append(word)
+          }
+        } else {
+          append(word)
+        }
+      } else {
+        append(ch)
+        i++
+      }
+    }
+  }
+}
+
+@Composable
+fun TextbookMathFormula(
+  rawFormula: String,
+  textColor: Color,
+  fontSize: TextUnit = 18.sp,
+  modifier: Modifier = Modifier
+) {
+  val equations = remember(rawFormula) {
+    rawFormula.split(" & ").map { it.trim() }.filter { it.isNotEmpty() }
+  }
+  val subSize = (fontSize.value * 0.68f).sp
+
+  Column(
+    modifier = modifier.fillMaxWidth(),
+    verticalArrangement = Arrangement.spacedBy(8.dp)
+  ) {
+    equations.forEach { eq ->
+      val segments = remember(eq) { splitBySqrt(eq) }
+      Row(
+        modifier = Modifier.horizontalScroll(rememberScrollState()),
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        segments.forEach { segment ->
+          when (segment) {
+            is MathSegment.Plain -> {
+              Text(
+                text = formatMathAnnotatedString(segment.text, subScale = subSize, italicizeSingleVars = true),
+                fontFamily = FontFamily.Serif,
+                fontSize = fontSize,
+                fontWeight = FontWeight.Medium,
+                color = textColor,
+                lineHeight = (fontSize.value * 1.3f).sp
+              )
+            }
+            is MathSegment.Sqrt -> {
+              Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                  text = "√",
+                  fontFamily = FontFamily.Serif,
+                  fontSize = (fontSize.value * 1.18f).sp,
+                  fontWeight = FontWeight.Normal,
+                  color = textColor
+                )
+                Box(
+                  modifier = Modifier
+                    .drawBehind {
+                      val stroke = 1.5.dp.toPx()
+                      val y = 2.dp.toPx()
+                      drawLine(
+                        color = textColor,
+                        start = Offset(0f, y),
+                        end = Offset(size.width, y),
+                        strokeWidth = stroke
+                      )
+                    }
+                    .padding(top = 3.dp, start = 2.dp, end = 3.dp)
+                ) {
+                  Text(
+                    text = formatMathAnnotatedString(segment.radicand, subScale = subSize, italicizeSingleVars = true),
+                    fontFamily = FontFamily.Serif,
+                    fontSize = fontSize,
+                    fontWeight = FontWeight.Medium,
+                    color = textColor
+                  )
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 @Composable
 fun FormulaSheetCardItem(
   sheet: SavedFormulaSheet,
@@ -791,7 +1165,6 @@ fun FormulaSheetViewerDialog(
   val clipboardManager = LocalClipboardManager.current
   val context = LocalContext.current
 
-  // Filter formulas belonging to this sheet or matching subject as fallback
   val sheetFormulas = if (sheet.formulaIds.isNotEmpty()) {
     val matched = allFormulas.filter { sheet.formulaIds.contains(it.id) }
     if (matched.isNotEmpty()) matched else allFormulas.filter { it.subject == sheet.subject }
@@ -919,20 +1292,19 @@ fun FormulaSheetViewerDialog(
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.fillMaxWidth()
               ) {
-                Text(
-                  text = formulaItem.formula,
-                  style = MaterialTheme.typography.bodyMedium,
-                  fontFamily = FontFamily.Monospace,
-                  fontWeight = FontWeight.Bold,
-                  color = sheet.subject.color,
-                  modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
-                )
+                Box(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+                  TextbookMathFormula(
+                    rawFormula = formulaItem.formula,
+                    textColor = sheet.subject.color,
+                    fontSize = 16.sp
+                  )
+                }
               }
 
               Spacer(modifier = Modifier.height(6.dp))
 
               Text(
-                text = formulaItem.explanation,
+                text = formatMathAnnotatedString(formulaItem.explanation, subScale = 9.sp, italicizeSingleVars = false),
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
               )
@@ -940,7 +1312,7 @@ fun FormulaSheetViewerDialog(
               if (formulaItem.unitsAndConstants.isNotBlank()) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                  text = "Units & Constants: ${formulaItem.unitsAndConstants}",
+                  text = formatMathAnnotatedString("Units & Constants: ${formulaItem.unitsAndConstants}", subScale = 8.sp, italicizeSingleVars = false),
                   style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
                   color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
                 )
@@ -1060,12 +1432,10 @@ fun FormulaQuizDialog(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
               )
-              Text(
-                text = optionText,
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Monospace,
-                color = MaterialTheme.colorScheme.onSurface
+              TextbookMathFormula(
+                rawFormula = optionText,
+                textColor = MaterialTheme.colorScheme.onSurface,
+                fontSize = 14.sp
               )
             }
           }
@@ -1073,7 +1443,7 @@ fun FormulaQuizDialog(
 
         if (currentQ.isAnswered) {
           Text(
-            text = if (currentQ.selectedOptionIndex == currentQ.correctOptionIndex) "✅ Correct! Great recall!" else "❌ Correct formula: ${currentQ.formulaCard.formula}",
+            text = if (currentQ.selectedOptionIndex == currentQ.correctOptionIndex) "✅ Correct! Great recall!" else "❌ Correct formula: ${preprocessMathText(currentQ.formulaCard.formula)}",
             style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.Bold,
             color = if (currentQ.selectedOptionIndex == currentQ.correctOptionIndex) BrandEmerald else BrandRose
