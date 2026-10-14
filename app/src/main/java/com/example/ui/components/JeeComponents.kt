@@ -1,23 +1,31 @@
 package com.example.ui.components
 
+import android.content.Context
+import android.content.Intent
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -25,6 +33,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -32,6 +41,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
@@ -40,31 +50,20 @@ import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.ElectricBolt
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.FormatListBulleted
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.NavigateBefore
 import androidx.compose.material.icons.filled.NavigateNext
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.PhotoLibrary
-import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.layout.ContentScale
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import coil.compose.AsyncImage
-import com.example.data.UserProfile
-import com.example.data.SampleData
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Shield
@@ -81,14 +80,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.ui.res.painterResource
-import com.example.R
-import com.example.data.MotivationalQuote
-import com.example.data.QuoteCategory
-import com.example.data.SyllabusTopic
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -96,21 +93,39 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import com.example.R
 import com.example.data.Chapter
 import com.example.data.ChapterStatus
 import com.example.data.College
@@ -118,7 +133,12 @@ import com.example.data.DailyGoal
 import com.example.data.FormulaCard
 import com.example.data.Mentor
 import com.example.data.MockTest
+import com.example.data.MotivationalQuote
+import com.example.data.QuoteCategory
+import com.example.data.SampleData
 import com.example.data.SubjectType
+import com.example.data.SyllabusTopic
+import com.example.data.UserProfile
 import com.example.data.WeightageLevel
 import com.example.ui.theme.BrandAccentGold
 import com.example.ui.theme.BrandEmerald
@@ -128,19 +148,17 @@ import com.example.ui.theme.BrandSecondary
 import com.example.ui.theme.ChemistryColor
 import com.example.ui.theme.MathColor
 import com.example.ui.theme.PhysicsColor
+import kotlin.math.cos
+import kotlin.math.sin
 
 @Composable
 fun CountdownTimerHero(
   targetYear: Int,
   modifier: Modifier = Modifier
 ) {
-  // Configured exam target dates
-  // Assuming target is Jan 24, 2027, Apr 06, 2027, May 23, 2027 or appropriate year
   val actualYear = if (targetYear < 2026) 2026 else targetYear
-  
-  // Timestamps (calculated using standard calendar timestamps)
+
   val examTargets = remember(actualYear) {
-    // Jan 24, 2027 09:00:00 AM IST (UTC+5:30)
     val s1Millis = java.util.Calendar.getInstance().apply {
       set(java.util.Calendar.YEAR, actualYear + 1)
       set(java.util.Calendar.MONTH, java.util.Calendar.JANUARY)
@@ -151,7 +169,6 @@ fun CountdownTimerHero(
       set(java.util.Calendar.MILLISECOND, 0)
     }.timeInMillis
 
-    // Apr 06, 2027 09:00:00 AM IST
     val s2Millis = java.util.Calendar.getInstance().apply {
       set(java.util.Calendar.YEAR, actualYear + 1)
       set(java.util.Calendar.MONTH, java.util.Calendar.APRIL)
@@ -162,7 +179,6 @@ fun CountdownTimerHero(
       set(java.util.Calendar.MILLISECOND, 0)
     }.timeInMillis
 
-    // May 23, 2027 09:00:00 AM IST
     val advMillis = java.util.Calendar.getInstance().apply {
       set(java.util.Calendar.YEAR, actualYear + 1)
       set(java.util.Calendar.MONTH, java.util.Calendar.MAY)
@@ -204,7 +220,6 @@ fun CountdownTimerHero(
   var selectedExamIndex by remember { mutableStateOf(0) }
   val activeExam = examTargets[selectedExamIndex.coerceIn(0, examTargets.lastIndex)]
 
-  // Real-time ticking state updated every 1000ms
   var currentTimeMillis by remember { mutableStateOf(System.currentTimeMillis()) }
 
   androidx.compose.runtime.LaunchedEffect(Unit) {
@@ -219,7 +234,7 @@ fun CountdownTimerHero(
   val hours = (diffMillis / (1000 * 60 * 60)) % 24
   val minutes = (diffMillis / (1000 * 60)) % 60
   val seconds = (diffMillis / 1000) % 60
-  val totalStudyHoursAvailable = days * 8 // Assuming 8 productive hours per day
+  val totalStudyHoursAvailable = days * 8
 
   Card(
     modifier = modifier
@@ -237,14 +252,12 @@ fun CountdownTimerHero(
         .fillMaxWidth()
         .padding(18.dp)
     ) {
-      // Header & Exam Selector Tabs
       Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
       ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-          // Blinking live pulse indicator
           Box(
             modifier = Modifier
               .size(8.dp)
@@ -261,7 +274,6 @@ fun CountdownTimerHero(
           )
         }
 
-        // Toggle Exam Pill
         Row(
           modifier = Modifier
             .clip(RoundedCornerShape(20.dp))
@@ -291,7 +303,6 @@ fun CountdownTimerHero(
 
       Spacer(modifier = Modifier.height(10.dp))
 
-      // Exam Title & Exact Target Date
       Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -330,7 +341,6 @@ fun CountdownTimerHero(
 
       Spacer(modifier = Modifier.height(16.dp))
 
-      // Countdown Big Digits: DAYS : HOURS : MINS : SECS
       Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -385,7 +395,6 @@ fun CountdownTimerHero(
 
       Spacer(modifier = Modifier.height(14.dp))
 
-      // Study Budget & Pace Metric Pill
       Box(
         modifier = Modifier
           .fillMaxWidth()
@@ -494,7 +503,6 @@ fun StreakTargetWidget(
     modifier = modifier.fillMaxWidth(),
     horizontalArrangement = Arrangement.spacedBy(10.dp)
   ) {
-    // Daily Streak Card
     Card(
       modifier = Modifier
         .weight(1f)
@@ -524,7 +532,7 @@ fun StreakTargetWidget(
         Spacer(modifier = Modifier.width(10.dp))
         Column {
           Text(
-            text = "$streakDays Days",
+            text = if (streakDays == 1) "1 Day" else "$streakDays Days",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
@@ -538,7 +546,6 @@ fun StreakTargetWidget(
       }
     }
 
-    // Target Score & Percentile Card
     Card(
       modifier = Modifier
         .weight(1.1f)
@@ -875,7 +882,6 @@ fun ChapterCardItem(
         .fillMaxWidth()
         .padding(14.dp)
     ) {
-      // Header: Class & Weightage Badge + Status Selector
       Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -913,7 +919,6 @@ fun ChapterCardItem(
           }
         }
 
-        // Status pill (Clickable to cycle!)
         Box(
           modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
@@ -932,7 +937,6 @@ fun ChapterCardItem(
 
       Spacer(modifier = Modifier.height(8.dp))
 
-      // Chapter Title & Expand Header
       Row(
         modifier = Modifier
           .fillMaxWidth()
@@ -962,7 +966,6 @@ fun ChapterCardItem(
 
       Spacer(modifier = Modifier.height(6.dp))
 
-      // Topic Checklist Progress Indicator
       Row(
         modifier = Modifier
           .fillMaxWidth()
@@ -1009,7 +1012,6 @@ fun ChapterCardItem(
         }
       }
 
-      // Expandable Topics Checklist List
       AnimatedVisibility(visible = isExpanded) {
         Column(
           modifier = Modifier
@@ -1017,7 +1019,6 @@ fun ChapterCardItem(
             .padding(top = 10.dp),
           verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-          // Action Bar for chapter checklist
           Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -1032,7 +1033,6 @@ fun ChapterCardItem(
             )
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-              // Mark all
               Text(
                 text = if (chapter.isAllTopicsCompleted) "Unmark All" else "Mark All Done",
                 style = MaterialTheme.typography.labelSmall,
@@ -1044,7 +1044,6 @@ fun ChapterCardItem(
                   .padding(horizontal = 6.dp, vertical = 2.dp)
               )
 
-              // Add topic
               Text(
                 text = "+ Add Topic",
                 style = MaterialTheme.typography.labelSmall,
@@ -1058,7 +1057,6 @@ fun ChapterCardItem(
             }
           }
 
-          // Individual Topic Items
           chapter.topics.forEach { topic ->
             TopicChecklistItem(
               topic = topic,
@@ -1073,7 +1071,6 @@ fun ChapterCardItem(
 
       Spacer(modifier = Modifier.height(10.dp))
 
-      // Key concepts tags (collapsed preview)
       if (!isExpanded) {
         FlowRow(
           horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -1098,7 +1095,6 @@ fun ChapterCardItem(
         Spacer(modifier = Modifier.height(10.dp))
       }
 
-      // PYQ Progress bar & Action buttons
       Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -1137,7 +1133,6 @@ fun ChapterCardItem(
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // +5 PYQs quick increment button
         Box(
           modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
@@ -1155,7 +1150,6 @@ fun ChapterCardItem(
 
         Spacer(modifier = Modifier.width(6.dp))
 
-        // Formulas Button
         Box(
           modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
@@ -1224,7 +1218,6 @@ fun TopicChecklistItem(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
       ) {
-        // Checkbox icon
         IconButton(
           onClick = onToggle,
           modifier = Modifier.size(28.dp)
@@ -1239,7 +1232,6 @@ fun TopicChecklistItem(
 
         Spacer(modifier = Modifier.width(6.dp))
 
-        // Topic Title & Tag
         Column(modifier = Modifier.weight(1f)) {
           Text(
             text = topic.name,
@@ -1255,7 +1247,6 @@ fun TopicChecklistItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
           ) {
-            // Tag Pill
             Box(
               modifier = Modifier
                 .clip(RoundedCornerShape(4.dp))
@@ -1281,7 +1272,6 @@ fun TopicChecklistItem(
               )
             }
 
-            // Formula Hint Toggle
             if (topic.keyFormulaHint != null) {
               Box(
                 modifier = Modifier
@@ -1312,22 +1302,19 @@ fun TopicChecklistItem(
         }
       }
 
-      // Expandable Formula Hint banner
       AnimatedVisibility(visible = showHint && topic.keyFormulaHint != null) {
         Box(
           modifier = Modifier
             .fillMaxWidth()
             .padding(top = 6.dp, start = 34.dp)
-            .clip(RoundedCornerShape(6.dp))
-            .background(BrandPrimary.copy(alpha = 0.1f))
-            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(BrandPrimary.copy(alpha = 0.12f))
+            .padding(horizontal = 10.dp, vertical = 6.dp)
         ) {
-          Text(
-            text = "⚡️ ${topic.keyFormulaHint}",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontFamily = FontFamily.Monospace,
-            fontSize = 11.sp
+          ComponentMathFormula(
+            rawFormula = topic.keyFormulaHint ?: "",
+            textColor = subjectColor,
+            fontSize = 14.sp
           )
         }
       }
@@ -1383,7 +1370,6 @@ fun FlatTopicChecklistItem(
         .fillMaxWidth()
         .padding(12.dp)
     ) {
-      // Chapter breadcrumb
       Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -1435,7 +1421,6 @@ fun FlatTopicChecklistItem(
 
       Spacer(modifier = Modifier.height(6.dp))
 
-      // Topic Checkbox and Title
       Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
@@ -1497,16 +1482,14 @@ fun FlatTopicChecklistItem(
           modifier = Modifier
             .fillMaxWidth()
             .padding(top = 6.dp, start = 36.dp)
-            .clip(RoundedCornerShape(6.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(BrandPrimary.copy(alpha = 0.12f))
-            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .padding(horizontal = 10.dp, vertical = 6.dp)
         ) {
-          Text(
-            text = "⚡️ ${topic.keyFormulaHint}",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontFamily = FontFamily.Monospace,
-            fontSize = 11.sp
+          ComponentMathFormula(
+            rawFormula = topic.keyFormulaHint ?: "",
+            textColor = subjectColor,
+            fontSize = 14.sp
           )
         }
       }
@@ -1536,7 +1519,6 @@ fun FormulaCardItem(
         .fillMaxWidth()
         .padding(14.dp)
     ) {
-      // Header: Subject tag & Topic + Bookmark Icon
       Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -1623,29 +1605,25 @@ fun FormulaCardItem(
 
       Spacer(modifier = Modifier.height(8.dp))
 
-      // Formula Box Highlight
       Box(
         modifier = Modifier
           .fillMaxWidth()
           .clip(RoundedCornerShape(10.dp))
           .background(MaterialTheme.colorScheme.surfaceVariant)
           .border(1.dp, card.subject.color.copy(alpha = 0.35f), RoundedCornerShape(10.dp))
-          .padding(horizontal = 12.dp, vertical = 10.dp)
+          .padding(horizontal = 14.dp, vertical = 12.dp)
       ) {
-        Text(
-          text = card.formula,
-          style = MaterialTheme.typography.titleMedium,
-          fontWeight = FontWeight.Bold,
-          fontFamily = FontFamily.Monospace,
-          color = card.subject.color,
-          lineHeight = 22.sp
+        ComponentMathFormula(
+          rawFormula = card.formula,
+          textColor = card.subject.color,
+          fontSize = 18.sp
         )
       }
 
       Spacer(modifier = Modifier.height(8.dp))
 
       Text(
-        text = card.explanation,
+        text = formatComponentMathAnnotated(card.explanation, subScale = 10.sp, italicizeSingleVars = false),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurface
       )
@@ -1653,11 +1631,221 @@ fun FormulaCardItem(
       Spacer(modifier = Modifier.height(4.dp))
 
       Text(
-        text = "💡 ${card.unitsAndConstants}",
+        text = formatComponentMathAnnotated("💡 ${card.unitsAndConstants}", subScale = 9.sp, italicizeSingleVars = false),
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         fontSize = 11.sp
       )
+    }
+  }
+}
+
+// -------------------------------------------------------------
+// TEXTBOOK MATH RENDERER FOR COMPONENTS
+// -------------------------------------------------------------
+private sealed class CompMathSegment {
+  data class Plain(val text: String) : CompMathSegment()
+  data class Sqrt(val radicand: String) : CompMathSegment()
+}
+
+private fun splitCompBySqrt(input: String): List<CompMathSegment> {
+  val result = mutableListOf<CompMathSegment>()
+  var index = 0
+  while (index < input.length) {
+    val sqrtPos = input.indexOf("sqrt(", startIndex = index, ignoreCase = true)
+    if (sqrtPos == -1) {
+      result.add(CompMathSegment.Plain(input.substring(index)))
+      break
+    }
+    if (sqrtPos > index) {
+      result.add(CompMathSegment.Plain(input.substring(index, sqrtPos)))
+    }
+    val openParen = sqrtPos + 4
+    var depth = 0
+    var closeParen = -1
+    for (i in openParen until input.length) {
+      when (input[i]) {
+        '(' -> depth++
+        ')' -> {
+          depth--
+          if (depth == 0) {
+            closeParen = i
+            break
+          }
+        }
+      }
+    }
+    if (closeParen != -1) {
+      val inside = input.substring(openParen + 1, closeParen)
+      result.add(CompMathSegment.Sqrt(inside))
+      index = closeParen + 1
+    } else {
+      result.add(CompMathSegment.Plain(input.substring(sqrtPos)))
+      break
+    }
+  }
+  return result
+}
+
+private fun preprocessCompMathText(raw: String): String {
+  var s = raw
+  s = s.replace("μ_s ", "μ_spin ")
+  s = s.replace("μ_s=", "μ_spin=")
+  s = s.replace(Regex("--\\(([^)]+)\\)-->"), " ──($1)──► ")
+  s = s.replace("-->", " ──► ")
+  s = s.replace("->", " → ")
+  s = s.replace("<=>", " ⇌ ")
+  s = s.replace("<=", " ≤ ")
+  s = s.replace(">=", " ≥ ")
+  s = s.replace("!=", " ≠ ")
+  s = s.replace("+-", "±")
+  s = s.replace(Regex("([a-zA-Z0-9_)])\\s*\\*\\s*\\("), "$1(")
+  s = s.replace(Regex("\\)\\s*\\*\\s*([a-zA-Z(])"), ") $1")
+  s = s.replace(Regex("([0-9])\\s*\\*\\s*([a-zA-ZμλθπΔ])"), "$1$2")
+  s = s.replace(" * ", " · ")
+  s = s.replace("*", "·")
+  s = s.replace("log10", "log_10")
+  s = s.replace("log2", "log_2")
+  return s
+}
+
+fun formatComponentMathAnnotated(
+  raw: String,
+  subScale: TextUnit = 12.sp,
+  italicizeSingleVars: Boolean = true
+): AnnotatedString {
+  val cleaned = preprocessCompMathText(raw)
+  return buildAnnotatedString {
+    var i = 0
+    while (i < cleaned.length) {
+      val ch = cleaned[i]
+      if (ch == '_' || ch == '^') {
+        val shift = if (ch == '_') BaselineShift.Subscript else BaselineShift.Superscript
+        i++
+        if (i < cleaned.length && cleaned[i] == '(') {
+          val start = i + 1
+          var depth = 1
+          i++
+          while (i < cleaned.length && depth > 0) {
+            if (cleaned[i] == '(') depth++
+            else if (cleaned[i] == ')') depth--
+            i++
+          }
+          val content = cleaned.substring(start, (i - 1).coerceAtLeast(start))
+          withStyle(SpanStyle(baselineShift = shift, fontSize = subScale, fontStyle = FontStyle.Normal)) {
+            append(content)
+          }
+        } else {
+          val start = i
+          while (i < cleaned.length && (cleaned[i].isLetterOrDigit() || cleaned[i] == '/' || cleaned[i] == '-' || cleaned[i] == '+')) {
+            if ((cleaned[i] == '-' || cleaned[i] == '+') && i > start) break
+            i++
+          }
+          val content = cleaned.substring(start, i)
+          withStyle(SpanStyle(baselineShift = shift, fontSize = subScale, fontStyle = FontStyle.Normal)) {
+            append(content)
+          }
+        }
+      } else if (ch.isDigit() && i > 0 && cleaned[i - 1].isLetter() && (i < 2 || !cleaned[i - 2].isDigit())) {
+        val start = i
+        while (i < cleaned.length && cleaned[i].isDigit()) {
+          i++
+        }
+        withStyle(SpanStyle(baselineShift = BaselineShift.Subscript, fontSize = subScale, fontStyle = FontStyle.Normal)) {
+          append(cleaned.substring(start, i))
+        }
+      } else if (italicizeSingleVars && (ch.isLetter() || ch == 'μ' || ch == 'λ' || ch == 'θ')) {
+        val start = i
+        while (i < cleaned.length && cleaned[i].isLetter()) {
+          i++
+        }
+        val word = cleaned.substring(start, i)
+        val isSingleVar = word.length == 1 && word[0] !in listOf('R', 'C', 'H', 'O', 'N', 'S', 'P', 'K', 'I', 'F', 'B', 'V', 'W', 'U', 'Y')
+        if (isSingleVar || word == "μ") {
+          withStyle(SpanStyle(fontStyle = FontStyle.Italic)) {
+            append(word)
+          }
+        } else {
+          append(word)
+        }
+      } else {
+        append(ch)
+        i++
+      }
+    }
+  }
+}
+
+@Composable
+fun ComponentMathFormula(
+  rawFormula: String,
+  textColor: Color,
+  fontSize: TextUnit = 17.sp,
+  modifier: Modifier = Modifier
+) {
+  val equations = remember(rawFormula) {
+    rawFormula.split(" & ").map { it.trim() }.filter { it.isNotEmpty() }
+  }
+  val subSize = (fontSize.value * 0.68f).sp
+
+  Column(
+    modifier = modifier.fillMaxWidth(),
+    verticalArrangement = Arrangement.spacedBy(6.dp)
+  ) {
+    equations.forEach { eq ->
+      val segments = remember(eq) { splitCompBySqrt(eq) }
+      Row(
+        modifier = Modifier.horizontalScroll(rememberScrollState()),
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        segments.forEach { segment ->
+          when (segment) {
+            is CompMathSegment.Plain -> {
+              Text(
+                text = formatComponentMathAnnotated(segment.text, subScale = subSize, italicizeSingleVars = true),
+                fontFamily = FontFamily.Serif,
+                fontSize = fontSize,
+                fontWeight = FontWeight.Medium,
+                color = textColor,
+                lineHeight = (fontSize.value * 1.3f).sp
+              )
+            }
+            is CompMathSegment.Sqrt -> {
+              Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                  text = "√",
+                  fontFamily = FontFamily.Serif,
+                  fontSize = (fontSize.value * 1.18f).sp,
+                  fontWeight = FontWeight.Normal,
+                  color = textColor
+                )
+                Box(
+                  modifier = Modifier
+                    .drawBehind {
+                      val stroke = 1.5.dp.toPx()
+                      val y = 2.dp.toPx()
+                      drawLine(
+                        color = textColor,
+                        start = Offset(0f, y),
+                        end = Offset(size.width, y),
+                        strokeWidth = stroke
+                      )
+                    }
+                    .padding(top = 3.dp, start = 2.dp, end = 3.dp)
+                ) {
+                  Text(
+                    text = formatComponentMathAnnotated(segment.radicand, subScale = subSize, italicizeSingleVars = true),
+                    fontFamily = FontFamily.Serif,
+                    fontSize = fontSize,
+                    fontWeight = FontWeight.Medium,
+                    color = textColor
+                  )
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }
@@ -1691,7 +1879,6 @@ fun MentorCardItem(
           verticalAlignment = Alignment.CenterVertically,
           modifier = Modifier.weight(1f)
         ) {
-          // Avatar
           Box(
             modifier = Modifier
               .size(48.dp)
@@ -1883,7 +2070,6 @@ fun CollegeCardItem(
 
       Spacer(modifier = Modifier.height(10.dp))
 
-      // Cutoff and Placement Stats Row
       Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
@@ -1970,7 +2156,7 @@ fun StatBadge(
 }
 
 // -------------------------------------------------------------
-// AVENGERS THEME BACKGROUND & ARTWORK WATERMARK COMPONENT
+// DOCTOR STRANGE CHARACTER PORTRAIT + CLOAK OF LEVITATION & MANDALA
 // -------------------------------------------------------------
 @Composable
 fun AvengersThemeArtWatermark(
@@ -1978,45 +2164,225 @@ fun AvengersThemeArtWatermark(
   accentColor: Color,
   modifier: Modifier = Modifier
 ) {
-  val iconRes = when (heroType) {
-    "CAPTAIN_AMERICA" -> R.drawable.ic_hero_shield
-    "IRON_MAN" -> R.drawable.ic_arc_reactor
-    "THOR" -> R.drawable.ic_thor_hammer
-    "DOCTOR_STRANGE" -> R.drawable.ic_doctor_strange
-    "SPIDER_MAN" -> R.drawable.ic_spiderman
-    "INFINITY_GAUNTLET" -> R.drawable.ic_infinity_gauntlet
-    else -> R.drawable.ic_avengers_logo
-  }
+  val mysticGold = Color(0xFFFFB300)
+  val mysticAmber = Color(0xFFFF6D00)
+  val mysticEmerald = Color(0xFF00E676)
+  val cloakRed = Color(0xFFC62828)
+  val cloakDarkRed = Color(0xFF8E0000)
+  val tunicNavy = Color(0xFF1A237E)
 
   Box(
-    modifier = modifier,
+    modifier = modifier.size(250.dp),
     contentAlignment = Alignment.Center
   ) {
-    // Ambient colored radial background aura
-    Box(
-      modifier = Modifier
-        .size(190.dp)
-        .clip(CircleShape)
-        .background(
-          Brush.radialGradient(
-            listOf(
-              accentColor.copy(alpha = 0.22f),
-              accentColor.copy(alpha = 0.05f),
-              Color.Transparent
-            )
-          )
-        )
-    )
+    Canvas(modifier = Modifier.size(240.dp)) {
+      val cx = size.width * 0.56f
+      val cy = size.height * 0.46f
+      val maxR = size.minDimension * 0.46f
 
-    // Giant artistic Avengers icon watermark
-    Image(
-      painter = painterResource(id = iconRes),
-      contentDescription = null,
-      modifier = Modifier
-        .size(150.dp)
-        .alpha(0.18f),
-      contentScale = ContentScale.Fit
-    )
+      // 1. Ambient Portal Glow behind Doctor Strange
+      drawCircle(
+        brush = Brush.radialGradient(
+          colors = listOf(
+            mysticGold.copy(alpha = 0.34f),
+            mysticAmber.copy(alpha = 0.16f),
+            Color.Transparent
+          ),
+          center = Offset(cx, cy),
+          radius = maxR * 1.15f
+        ),
+        radius = maxR * 1.15f,
+        center = Offset(cx, cy)
+      )
+
+      // Outer Eldritch Mandala Ring
+      drawCircle(
+        color = mysticGold.copy(alpha = 0.48f),
+        radius = maxR * 0.94f,
+        center = Offset(cx, cy),
+        style = Stroke(
+          width = 2.dp.toPx(),
+          pathEffect = PathEffect.dashPathEffect(floatArrayOf(14f, 8f), 0f)
+        )
+      )
+
+      // Interlocking Sacred Geometry Squares behind Doctor Strange
+      val sqSide = maxR * 1.16f
+      val topLeft = Offset(cx - sqSide / 2f, cy - sqSide / 2f)
+      for (angle in listOf(0f, 30f, 60f)) {
+        rotate(degrees = angle, pivot = Offset(cx, cy)) {
+          drawRect(
+            color = mysticGold.copy(alpha = 0.30f),
+            topLeft = topLeft,
+            size = Size(sqSide, sqSide),
+            style = Stroke(width = 1.3.dp.toPx())
+          )
+        }
+      }
+
+      // 2. DOCTOR STRANGE CHARACTER FIGURE (Cloak of Levitation + Head + Eye of Agamotto)
+      // High-Collared Red Cloak of Levitation (Outer Cape & Iconic High Winged Collar)
+      val cloakPath = Path().apply {
+        // Left high collar tip
+        moveTo(cx - maxR * 0.44f, cy - maxR * 0.38f)
+        // Left outer collar flare
+        lineTo(cx - maxR * 0.54f, cy - maxR * 0.08f)
+        // Left sweeping shoulder & cape
+        lineTo(cx - maxR * 0.82f, cy + maxR * 0.25f)
+        lineTo(cx - maxR * 0.95f, cy + maxR * 1.05f)
+        // Bottom hem of cape
+        lineTo(cx + maxR * 0.95f, cy + maxR * 1.05f)
+        // Right sweeping shoulder & cape
+        lineTo(cx + maxR * 0.82f, cy + maxR * 0.25f)
+        // Right outer collar flare
+        lineTo(cx + maxR * 0.54f, cy - maxR * 0.08f)
+        // Right high collar tip
+        lineTo(cx + maxR * 0.44f, cy - maxR * 0.38f)
+        // Inner collar dip behind neck
+        lineTo(cx + maxR * 0.22f, cy - maxR * 0.12f)
+        lineTo(cx - maxR * 0.22f, cy - maxR * 0.12f)
+        close()
+      }
+      drawPath(
+        path = cloakPath,
+        brush = Brush.verticalGradient(
+          colors = listOf(
+            cloakRed.copy(alpha = 0.62f),
+            cloakDarkRed.copy(alpha = 0.48f),
+            Color.Transparent
+          ),
+          startY = cy - maxR * 0.4f,
+          endY = cy + maxR * 1.05f
+        )
+      )
+      // Gold trim along the Cloak of Levitation collar
+      drawPath(
+        path = cloakPath,
+        color = mysticGold.copy(alpha = 0.45f),
+        style = Stroke(width = 1.4.dp.toPx())
+      )
+
+      // Inner Sanctum Tunic (Deep Navy Robe over Torso)
+      val tunicPath = Path().apply {
+        moveTo(cx - maxR * 0.36f, cy + maxR * 0.12f)
+        lineTo(cx + maxR * 0.36f, cy + maxR * 0.12f)
+        lineTo(cx + maxR * 0.48f, cy + maxR * 0.98f)
+        lineTo(cx - maxR * 0.48f, cy + maxR * 0.98f)
+        close()
+      }
+      drawPath(
+        path = tunicPath,
+        color = tunicNavy.copy(alpha = 0.65f)
+      )
+
+      // Doctor Strange Head & Hair Silhouette
+      val headCenter = Offset(cx, cy - maxR * 0.24f)
+      val headRadius = maxR * 0.21f
+      // Hair & Head base
+      drawCircle(
+        color = Color(0xFF1E1B2E).copy(alpha = 0.82f),
+        radius = headRadius,
+        center = headCenter
+      )
+      // Iconic white/silver hair streaks at both temples
+      drawArc(
+        color = Color.White.copy(alpha = 0.65f),
+        startAngle = 155f,
+        sweepAngle = 35f,
+        useCenter = false,
+        topLeft = Offset(headCenter.x - headRadius, headCenter.y - headRadius),
+        size = Size(headRadius * 2f, headRadius * 2f),
+        style = Stroke(width = 2.5.dp.toPx())
+      )
+      drawArc(
+        color = Color.White.copy(alpha = 0.65f),
+        startAngle = 350f,
+        sweepAngle = 35f,
+        useCenter = false,
+        topLeft = Offset(headCenter.x - headRadius, headCenter.y - headRadius),
+        size = Size(headRadius * 2f, headRadius * 2f),
+        style = Stroke(width = 2.5.dp.toPx())
+      )
+      // Glowing Mystic Eyes (Sorcerer Supreme Ascended State)
+      drawCircle(
+        color = Color(0xFF00E5FF).copy(alpha = 0.9f),
+        radius = 2.6.dp.toPx(),
+        center = Offset(headCenter.x - headRadius * 0.36f, headCenter.y - headRadius * 0.05f)
+      )
+      drawCircle(
+        color = Color(0xFF00E5FF).copy(alpha = 0.9f),
+        radius = 2.6.dp.toPx(),
+        center = Offset(headCenter.x + headRadius * 0.36f, headCenter.y - headRadius * 0.05f)
+      )
+
+      // 3. Glowing Eye of Agamotto (Time Stone Amulet on Chest)
+      val eyeCenter = Offset(cx, cy + maxR * 0.28f)
+      // Amulet cords
+      drawLine(
+        color = mysticGold.copy(alpha = 0.55f),
+        start = Offset(cx - maxR * 0.16f, cy + maxR * 0.04f),
+        end = eyeCenter,
+        strokeWidth = 1.6.dp.toPx()
+      )
+      drawLine(
+        color = mysticGold.copy(alpha = 0.55f),
+        start = Offset(cx + maxR * 0.16f, cy + maxR * 0.04f),
+        end = eyeCenter,
+        strokeWidth = 1.6.dp.toPx()
+      )
+      // Emerald Time Stone Aura
+      drawCircle(
+        brush = Brush.radialGradient(
+          colors = listOf(
+            mysticEmerald.copy(alpha = 0.85f),
+            mysticEmerald.copy(alpha = 0.25f),
+            Color.Transparent
+          ),
+          center = eyeCenter,
+          radius = maxR * 0.24f
+        ),
+        radius = maxR * 0.24f,
+        center = eyeCenter
+      )
+      // Golden Eye of Agamotto Frame
+      drawCircle(
+        color = mysticGold.copy(alpha = 0.85f),
+        radius = maxR * 0.09f,
+        center = eyeCenter,
+        style = Stroke(width = 1.8.dp.toPx())
+      )
+      // Bright green Time Stone core
+      drawCircle(
+        color = mysticEmerald,
+        radius = maxR * 0.045f,
+        center = eyeCenter
+      )
+
+      // 4. Two Smaller Eldritch Magic Shields on Left & Right Hands
+      val leftHand = Offset(cx - maxR * 0.62f, cy + maxR * 0.42f)
+      val rightHand = Offset(cx + maxR * 0.62f, cy + maxR * 0.42f)
+      for (handCenter in listOf(leftHand, rightHand)) {
+        drawCircle(
+          brush = Brush.radialGradient(
+            colors = listOf(
+              mysticGold.copy(alpha = 0.45f),
+              mysticAmber.copy(alpha = 0.15f),
+              Color.Transparent
+            ),
+            center = handCenter,
+            radius = maxR * 0.28f
+          ),
+          radius = maxR * 0.28f,
+          center = handCenter
+        )
+        drawCircle(
+          color = mysticGold.copy(alpha = 0.65f),
+          radius = maxR * 0.20f,
+          center = handCenter,
+          style = Stroke(width = 1.3.dp.toPx())
+        )
+      }
+    }
   }
 }
 
@@ -2059,7 +2425,6 @@ fun UserAvatarView(
       contentAlignment = Alignment.Center
     ) {
       if (!userProfile.avatarUri.isNullOrBlank()) {
-        // Custom User Image via Coil AsyncImage
         AsyncImage(
           model = userProfile.avatarUri,
           contentDescription = "User Profile Photo",
@@ -2069,7 +2434,6 @@ fun UserAvatarView(
           contentScale = ContentScale.Crop
         )
       } else {
-        // Preset or Initials
         val presetDrawable = when (userProfile.avatarPreset) {
           "iron_man" -> R.drawable.ic_arc_reactor
           "cap" -> R.drawable.ic_hero_shield
@@ -2107,7 +2471,7 @@ fun UserAvatarView(
               .background(Brush.linearGradient(listOf(BrandEmerald, BrandPrimary))),
             contentAlignment = Alignment.Center
           ) {
-            Text(text = "👨‍🎓", fontSize = (size.value * 0.48f).sp)
+            Text(text = "👨🎓", fontSize = (size.value * 0.48f).sp)
           }
         } else if (userProfile.avatarPreset == "aspirant_girl") {
           Box(
@@ -2116,10 +2480,9 @@ fun UserAvatarView(
               .background(Brush.linearGradient(listOf(BrandRose, BrandAccentGold))),
             contentAlignment = Alignment.Center
           ) {
-            Text(text = "👩‍🎓", fontSize = (size.value * 0.48f).sp)
+            Text(text = "👩🎓", fontSize = (size.value * 0.48f).sp)
           }
         } else {
-          // Default Initials (e.g. SK)
           Box(
             modifier = Modifier
               .size(size)
@@ -2141,7 +2504,6 @@ fun UserAvatarView(
       }
     }
 
-    // Editable camera badge on corner
     if (isEditable) {
       Box(
         modifier = Modifier
@@ -2173,13 +2535,12 @@ fun EditProfileAvatarDialog(
   onDismiss: () -> Unit
 ) {
   val context = LocalContext.current
-  var selectedTab by remember { mutableStateOf(0) } // 0: Avengers & Presets, 1: Gallery & URL
+  var selectedTab by remember { mutableStateOf(0) }
   var selectedPreset by remember { mutableStateOf(userProfile.avatarPreset) }
   var customImageUrl by remember { mutableStateOf(userProfile.avatarUri ?: "") }
   var selectedColorHex by remember { mutableStateOf(userProfile.avatarColorHex) }
   var hasNewPickedImage by remember { mutableStateOf(false) }
 
-  // System Photo Picker launcher
   val photoPickerLauncher = rememberLauncherForActivityResult(
     contract = ActivityResultContracts.GetContent()
   ) { uri ->
@@ -2199,13 +2560,13 @@ fun EditProfileAvatarDialog(
   }
 
   val colorPalette = listOf(
-    0xFF00E5FF, // Cyan
-    0xFFFFD700, // Gold
-    0xFF00E676, // Emerald
-    0xFF42A5F5, // Cap Blue
-    0xFFFF1744, // Scarlet
-    0xFFAB47BC, // Cosmic Purple
-    0xFFFF9100  // Amber
+    0xFF00E5FF,
+    0xFFFFD700,
+    0xFF00E676,
+    0xFF42A5F5,
+    0xFFFF1744,
+    0xFFAB47BC,
+    0xFFFF9100
   )
 
   AlertDialog(
@@ -2233,7 +2594,6 @@ fun EditProfileAvatarDialog(
           .height(420.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
       ) {
-        // Preview Header
         Card(
           modifier = Modifier.fillMaxWidth(),
           shape = RoundedCornerShape(16.dp),
@@ -2285,7 +2645,6 @@ fun EditProfileAvatarDialog(
           }
         }
 
-        // Tabs: 0: Avengers & Presets, 1: Upload Photo / URL
         TabRow(
           selectedTabIndex = selectedTab,
           containerColor = MaterialTheme.colorScheme.surface,
@@ -2304,7 +2663,6 @@ fun EditProfileAvatarDialog(
         }
 
         if (selectedTab == 0) {
-          // Avengers & Aspirant Presets Grid
           androidx.compose.foundation.lazy.LazyColumn(
             modifier = Modifier
               .fillMaxWidth()
@@ -2322,7 +2680,7 @@ fun EditProfileAvatarDialog(
                   .clickable {
                     selectedPreset = preset.id
                     selectedColorHex = preset.themeColorHex
-                    customImageUrl = "" // Clear custom when picking preset
+                    customImageUrl = ""
                   },
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(
@@ -2339,7 +2697,6 @@ fun EditProfileAvatarDialog(
                     .padding(10.dp),
                   verticalAlignment = Alignment.CenterVertically
                 ) {
-                  // Icon thumbnail
                   Box(
                     modifier = Modifier
                       .size(38.dp)
@@ -2388,14 +2745,12 @@ fun EditProfileAvatarDialog(
             }
           }
         } else {
-          // Upload Photo & Custom URL Tab
           Column(
             modifier = Modifier
               .fillMaxWidth()
               .weight(1f),
             verticalArrangement = Arrangement.spacedBy(14.dp)
           ) {
-            // Button 1: Pick from Device Gallery
             Button(
               onClick = {
                 photoPickerLauncher.launch("image/*")
@@ -2452,7 +2807,6 @@ fun EditProfileAvatarDialog(
           }
         }
 
-        // Bottom Aura Color Picker Row
         Row(
           modifier = Modifier.fillMaxWidth(),
           horizontalArrangement = Arrangement.SpaceBetween,
@@ -2513,7 +2867,7 @@ fun EditProfileAvatarDialog(
 }
 
 // -------------------------------------------------------------
-// UPGRADED AVENGERS MOTIVATION HERO CARD WITH RICH THEME ART
+// UPGRADED AVENGERS & DOCTOR STRANGE HERO CARD WITH CHARACTER IMAGE BG
 // -------------------------------------------------------------
 @Composable
 fun AvengersMotivationCard(
@@ -2532,12 +2886,34 @@ fun AvengersMotivationCard(
   val context = LocalContext.current
   val quoteAccentColor = Color(quote.accentColorHex)
 
-  // Dynamic hero backdrop gradient based on Avenger theme
+  // Persistent custom Doctor Strange background image URI in SharedPreferences
+  val bgPrefs = remember { context.getSharedPreferences("jee_hero_bg_prefs", Context.MODE_PRIVATE) }
+  val defaultDoctorStrangeImageUrl = "https://cdn.jsdelivr.net/gh/akabab/superhero-api@0.3.0/api/images/lg/226-doctor-strange.jpg"
+  var customBgUri by remember {
+    mutableStateOf(bgPrefs.getString("doctor_strange_bg_uri", defaultDoctorStrangeImageUrl) ?: defaultDoctorStrangeImageUrl)
+  }
+
+  val bgPickerLauncher = rememberLauncherForActivityResult(
+    contract = ActivityResultContracts.OpenDocument()
+  ) { uri ->
+    if (uri != null) {
+      try {
+        context.contentResolver.takePersistableUriPermission(
+          uri,
+          Intent.FLAG_GRANT_READ_URI_PERMISSION
+        )
+      } catch (_: Exception) {}
+      customBgUri = uri.toString()
+      bgPrefs.edit().putString("doctor_strange_bg_uri", uri.toString()).apply()
+      Toast.makeText(context, "Doctor Strange background updated! 🌀", Toast.LENGTH_SHORT).show()
+    }
+  }
+
   val cardBrush = Brush.linearGradient(
     colors = listOf(
-      Color(0xFF0E111D),
-      Color(0xFF16192B),
-      Color(0xFF090A12)
+      Color(0xFF140D26),
+      Color(0xFF1C1335),
+      Color(0xFF0A0D18)
     )
   )
 
@@ -2548,7 +2924,7 @@ fun AvengersMotivationCard(
     "DOCTOR_STRANGE" -> R.drawable.ic_doctor_strange
     "SPIDER_MAN" -> R.drawable.ic_spiderman
     "INFINITY_GAUNTLET" -> R.drawable.ic_infinity_gauntlet
-    else -> R.drawable.ic_avengers_logo
+    else -> R.drawable.ic_doctor_strange
   }
 
   Card(
@@ -2556,7 +2932,7 @@ fun AvengersMotivationCard(
       .fillMaxWidth()
       .testTag("avengers_motivation_card"),
     shape = RoundedCornerShape(22.dp),
-    border = BorderStroke(1.5.dp, quoteAccentColor.copy(alpha = 0.65f)),
+    border = BorderStroke(1.5.dp, Color(0xFFFFB300).copy(alpha = 0.78f)),
     colors = CardDefaults.cardColors(containerColor = Color.Transparent)
   ) {
     Box(
@@ -2564,22 +2940,47 @@ fun AvengersMotivationCard(
         .fillMaxWidth()
         .background(cardBrush)
     ) {
-      // 0. AVENGERS HERO ARTWORK WATERMARK IN BACKGROUND
+      // 0A. DOCTOR STRANGE CHARACTER ILLUSTRATION + CLOAK OF LEVITATION (Offline Fallback & Aura)
       AvengersThemeArtWatermark(
         heroType = quote.heroType,
         accentColor = quoteAccentColor,
         modifier = Modifier
           .align(Alignment.TopEnd)
-          .padding(top = 10.dp, end = 10.dp)
+          .padding(top = 0.dp, end = 0.dp)
+      )
+
+      // 0B. FULL-BLEED DOCTOR STRANGE PHOTO BACKGROUND (Online HD + Custom Gallery Photo)
+      AsyncImage(
+        model = customBgUri,
+        contentDescription = "Doctor Strange Character Background",
+        modifier = Modifier
+          .matchParentSize()
+          .alpha(0.42f),
+        contentScale = ContentScale.Crop
+      )
+
+      // 0C. Dark Vignette Scrim so text stays crisp over Doctor Strange's photo
+      Box(
+        modifier = Modifier
+          .matchParentSize()
+          .background(
+            Brush.verticalGradient(
+              colors = listOf(
+                Color(0xFF0B0914).copy(alpha = 0.35f),
+                Color(0xFF0B0914).copy(alpha = 0.55f),
+                Color(0xFF08070F).copy(alpha = 0.82f)
+              )
+            )
+          )
       )
 
       Column(
         modifier = Modifier
           .fillMaxWidth()
-          .padding(18.dp),
+          .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
       ) {
-        // 1. Header Row: Avengers Protocol & Arc Reactor Energy
+        // 1. Header Row: Doctor Strange Emblem + Title + Clean Non-Wrapping Streak/Core Pills
         Row(
           modifier = Modifier.fillMaxWidth(),
           horizontalArrangement = Arrangement.SpaceBetween,
@@ -2589,93 +2990,110 @@ fun AvengersMotivationCard(
             modifier = Modifier.weight(1f),
             verticalAlignment = Alignment.CenterVertically
           ) {
-            // Superhero / Avengers Icon Badge
+            // Tappable Doctor Strange Emblem (Tap to pick any custom Doctor Strange wallpaper!)
             Box(
               modifier = Modifier
-                .size(42.dp)
+                .size(44.dp)
                 .clip(CircleShape)
-                .background(Color(0xFF1E2235))
-                .border(1.5.dp, quoteAccentColor, CircleShape)
+                .background(Color(0xFF241938))
+                .border(1.5.dp, Color(0xFFFFB300), CircleShape)
+                .clickable { bgPickerLauncher.launch(arrayOf("image/*")) }
                 .padding(7.dp),
               contentAlignment = Alignment.Center
             ) {
               Image(
-                painter = painterResource(id = heroIconRes),
-                contentDescription = "Avengers Hero Symbol",
-                modifier = Modifier.size(26.dp)
+                painter = painterResource(id = R.drawable.ic_doctor_strange),
+                contentDescription = "Doctor Strange Mystic Symbol",
+                modifier = Modifier.size(28.dp)
               )
             }
 
             Spacer(modifier = Modifier.width(10.dp))
 
-            Column {
-              Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                  text = "AVENGERS ASSEMBLE",
-                  style = MaterialTheme.typography.labelSmall,
-                  fontWeight = FontWeight.ExtraBold,
-                  color = quoteAccentColor,
-                  letterSpacing = 1.sp
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Box(
-                  modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(BrandAccentGold.copy(alpha = 0.2f))
-                    .padding(horizontal = 5.dp, vertical = 2.dp)
-                ) {
-                  Text(
-                    text = "${currentStreakDays}D STREAK 🔥",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = BrandAccentGold
-                  )
-                }
-              }
+            Column(modifier = Modifier.weight(1f)) {
               Text(
-                text = "Earth's Mightiest Aspirant Protocol",
+                text = "AVENGERS ASSEMBLE",
                 style = MaterialTheme.typography.labelSmall,
-                color = Color.LightGray.copy(alpha = 0.7f),
-                fontSize = 11.sp
+                fontWeight = FontWeight.ExtraBold,
+                color = Color(0xFFFFB300),
+                letterSpacing = 0.8.sp,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis
+              )
+              Spacer(modifier = Modifier.height(2.dp))
+              Text(
+                text = "Doctor Strange • Mystic Protocol",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White.copy(alpha = 0.85f),
+                fontSize = 10.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
               )
             }
           }
 
-          // Arc Reactor Energy Pill
-          Box(
-            modifier = Modifier
-              .clip(RoundedCornerShape(12.dp))
-              .background(Color(0xFF00E5FF).copy(alpha = 0.15f))
-              .border(1.dp, Color(0xFF00E5FF).copy(alpha = 0.5f), RoundedCornerShape(12.dp))
-              .clickable(onClick = onBoostEnergy)
-              .padding(horizontal = 8.dp, vertical = 4.dp)
+          Spacer(modifier = Modifier.width(8.dp))
+
+          // Right side: Streak Pill & Core Energy Pill stacked cleanly
+          Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(5.dp)
           ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-              Icon(
-                imageVector = Icons.Default.FlashOn,
-                contentDescription = null,
-                tint = Color(0xFF00E5FF),
-                modifier = Modifier.size(14.dp)
-              )
-              Spacer(modifier = Modifier.width(2.dp))
+            Box(
+              modifier = Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .background(BrandAccentGold.copy(alpha = 0.24f))
+                .border(1.dp, BrandAccentGold.copy(alpha = 0.65f), RoundedCornerShape(10.dp))
+                .padding(horizontal = 8.dp, vertical = 3.dp)
+            ) {
               Text(
-                text = "$arcReactorEnergy% Core",
+                text = "🔥 ${currentStreakDays}D STREAK",
                 style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF00E5FF),
-                fontSize = 11.sp
+                fontSize = 10.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = BrandAccentGold,
+                maxLines = 1,
+                softWrap = false
               )
+            }
+
+            Box(
+              modifier = Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color(0xFF00E5FF).copy(alpha = 0.18f))
+                .border(1.dp, Color(0xFF00E5FF).copy(alpha = 0.6f), RoundedCornerShape(10.dp))
+                .clickable(onClick = onBoostEnergy)
+                .padding(horizontal = 8.dp, vertical = 3.dp)
+            ) {
+              Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                  imageVector = Icons.Default.FlashOn,
+                  contentDescription = null,
+                  tint = Color(0xFF00E5FF),
+                  modifier = Modifier.size(12.dp)
+                )
+                Spacer(modifier = Modifier.width(2.dp))
+                Text(
+                  text = "$arcReactorEnergy% Core",
+                  style = MaterialTheme.typography.labelSmall,
+                  fontWeight = FontWeight.Bold,
+                  color = Color(0xFF00E5FF),
+                  fontSize = 10.sp,
+                  maxLines = 1,
+                  softWrap = false
+                )
+              }
             }
           }
         }
 
-        // 2. The Motivational Quote Body (Framed with semi-transparent frosted card)
+        // 2. The Motivational Quote Body (Semi-transparent so Doctor Strange shows through!)
         Surface(
           modifier = Modifier.fillMaxWidth(),
           shape = RoundedCornerShape(16.dp),
-          color = Color(0xFF0A0C14).copy(alpha = 0.82f),
-          border = BorderStroke(1.dp, quoteAccentColor.copy(alpha = 0.35f))
+          color = Color(0xFF0B0A16).copy(alpha = 0.68f),
+          border = BorderStroke(1.dp, Color(0xFFFFB300).copy(alpha = 0.42f))
         ) {
           Column(
             modifier = Modifier
@@ -2688,7 +3106,7 @@ fun AvengersMotivationCard(
                 fontSize = 34.sp,
                 lineHeight = 24.sp,
                 fontWeight = FontWeight.Black,
-                color = quoteAccentColor
+                color = Color(0xFFFFB300)
               )
               Spacer(modifier = Modifier.width(6.dp))
               Text(
@@ -2703,7 +3121,6 @@ fun AvengersMotivationCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Hero / Author Subtitle
             Row(
               modifier = Modifier.fillMaxWidth(),
               horizontalArrangement = Arrangement.SpaceBetween,
@@ -2728,11 +3145,10 @@ fun AvengersMotivationCard(
                   text = quote.heroRole,
                   style = MaterialTheme.typography.labelSmall,
                   fontSize = 10.sp,
-                  color = Color.LightGray.copy(alpha = 0.8f)
+                  color = Color.LightGray.copy(alpha = 0.85f)
                 )
               }
 
-              // Copy, Notification & Bookmark Actions
               Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(
                   onClick = {
@@ -2789,14 +3205,14 @@ fun AvengersMotivationCard(
           modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
-            .background(quoteAccentColor.copy(alpha = 0.15f))
+            .background(Color(0xFFFFB300).copy(alpha = 0.16f))
             .padding(horizontal = 10.dp, vertical = 6.dp),
           verticalAlignment = Alignment.CenterVertically
         ) {
           Icon(
             imageVector = Icons.Default.AutoAwesome,
             contentDescription = null,
-            tint = quoteAccentColor,
+            tint = Color(0xFFFFB300),
             modifier = Modifier.size(15.dp)
           )
           Spacer(modifier = Modifier.width(6.dp))
@@ -2808,7 +3224,7 @@ fun AvengersMotivationCard(
           )
         }
 
-        // 4. Quick Action Navigation Row & Theme Indicator
+        // 4. Quick Action Navigation Row + Custom BG Picker + Theme Arsenal
         Row(
           modifier = Modifier.fillMaxWidth(),
           horizontalArrangement = Arrangement.SpaceBetween,
@@ -2830,7 +3246,7 @@ fun AvengersMotivationCard(
               )
             }
 
-            Spacer(modifier = Modifier.width(6.dp))
+            Spacer(modifier = Modifier.width(5.dp))
 
             Box(
               modifier = Modifier
@@ -2847,30 +3263,57 @@ fun AvengersMotivationCard(
               )
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(6.dp))
 
             Box(
               modifier = Modifier
                 .clip(RoundedCornerShape(8.dp))
-                .background(quoteAccentColor.copy(alpha = 0.2f))
+                .background(quoteAccentColor.copy(alpha = 0.24f))
                 .clickable(onClick = onRandomQuote)
-                .padding(horizontal = 10.dp, vertical = 6.dp)
+                .padding(horizontal = 9.dp, vertical = 6.dp)
             ) {
               Text(
-                text = "⚡️ Next Battlecry",
+                text = "⚡️ Next",
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
-                color = quoteAccentColor
+                color = quoteAccentColor,
+                maxLines = 1,
+                softWrap = false
+              )
+            }
+
+            Spacer(modifier = Modifier.width(6.dp))
+
+            // Pick custom Doctor Strange photo from gallery button
+            Box(
+              modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color(0xFFFFB300).copy(alpha = 0.22f))
+                .clickable { bgPickerLauncher.launch(arrayOf("image/*")) }
+                .padding(horizontal = 8.dp, vertical = 6.dp)
+            ) {
+              Text(
+                text = "🖼️ BG",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFFFFB300),
+                maxLines = 1,
+                softWrap = false
               )
             }
           }
 
-          TextButton(onClick = onOpenDeck) {
+          TextButton(
+            onClick = onOpenDeck,
+            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp)
+          ) {
             Text(
               text = "Theme Arsenal 📜",
               style = MaterialTheme.typography.labelSmall,
               fontWeight = FontWeight.Bold,
-              color = Color.White
+              color = Color.White,
+              maxLines = 1,
+              softWrap = false
             )
           }
         }
@@ -2906,7 +3349,7 @@ fun AvengersQuotesDeckDialog(
       ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
           Image(
-            painter = painterResource(id = R.drawable.ic_avengers_logo),
+            painter = painterResource(id = R.drawable.ic_doctor_strange),
             contentDescription = null,
             modifier = Modifier.size(26.dp)
           )
@@ -2924,7 +3367,6 @@ fun AvengersQuotesDeckDialog(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
       ) {
-        // Category Pills
         LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
           items(QuoteCategory.entries) { category ->
             val isSelected = category == selectedCategory
@@ -2945,7 +3387,6 @@ fun AvengersQuotesDeckDialog(
           }
         }
 
-        // Quotes Scroll List with Avengers Theme Artwork on each card
         androidx.compose.foundation.lazy.LazyColumn(
           modifier = Modifier
             .fillMaxWidth()
@@ -2971,7 +3412,6 @@ fun AvengersQuotesDeckDialog(
               border = BorderStroke(1.dp, accent.copy(alpha = 0.5f))
             ) {
               Box(modifier = Modifier.fillMaxWidth()) {
-                // Subtle hero watermark on list item
                 Image(
                   painter = painterResource(id = heroIcon),
                   contentDescription = null,
@@ -3091,4 +3531,3 @@ fun AvengersQuotesDeckDialog(
     }
   )
 }
-
