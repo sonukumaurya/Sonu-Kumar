@@ -1,7 +1,9 @@
 package com.example.ui.screens
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -61,6 +64,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -90,6 +94,12 @@ fun DashboardScreen(
   onNavigateToSyllabusWithSubject: (SubjectType) -> Unit,
   modifier: Modifier = Modifier
 ) {
+  val context = LocalContext.current
+  val dailyStreak = rememberDailyStreak(context)
+  val todayDayIndex = remember {
+    ((System.currentTimeMillis() + java.util.TimeZone.getDefault().rawOffset) / 86_400_000L).toInt()
+  }
+
   var showAddGoalDialog by remember { mutableStateOf(false) }
   var showQuotesDeckDialog by remember { mutableStateOf(false) }
   var showEditNameDialog by remember { mutableStateOf(false) }
@@ -108,6 +118,7 @@ fun DashboardScreen(
     item {
       UserGreetingHeaderCard(
         userProfile = uiState.userProfile,
+        streakDays = dailyStreak,
         onEditName = { showEditNameDialog = true },
         onEditAvatar = { showAvatarDialog = true },
         onOpenSettings = { onNavigateToTab(6) }
@@ -119,7 +130,7 @@ fun DashboardScreen(
       AvengersMotivationCard(
         quote = uiState.activeQuote,
         arcReactorEnergy = uiState.userProfile.arcReactorEnergy,
-        currentStreakDays = uiState.userProfile.currentStreakDays,
+        currentStreakDays = dailyStreak,
         onNextQuote = { viewModel.nextMotivationalQuote() },
         onPrevQuote = { viewModel.prevMotivationalQuote() },
         onRandomQuote = { viewModel.randomMotivationalQuote() },
@@ -137,7 +148,7 @@ fun DashboardScreen(
     // 3. Daily Streak & Target Score Widget
     item {
       StreakTargetWidget(
-        streakDays = uiState.userProfile.currentStreakDays,
+        streakDays = dailyStreak,
         targetScore = uiState.userProfile.targetScoreMains,
         totalScore = uiState.totalScore,
         predictedPercentile = uiState.predictedPercentile
@@ -296,12 +307,15 @@ fun DashboardScreen(
       )
     }
 
-    // 6. Flash Formula of the Day Card
+    // 6. Flash Formula of the Day Card (rotates automatically every day)
     item {
-      FlashFormulaCard(
-        formula = uiState.formulas.firstOrNull() ?: return@item,
-        onViewAllFormulas = { onNavigateToTab(4) } // Tab 4 is Formulas
-      )
+      if (uiState.formulas.isNotEmpty()) {
+        val dailyFormula = uiState.formulas[kotlin.math.abs(todayDayIndex) % uiState.formulas.size]
+        FlashFormulaCard(
+          formula = dailyFormula,
+          onViewAllFormulas = { onNavigateToTab(4) } // Tab 4 is Formulas
+        )
+      }
     }
 
     // 7. Upcoming Mock Test Card
@@ -364,6 +378,28 @@ fun DashboardScreen(
 }
 
 @Composable
+fun rememberDailyStreak(context: Context): Int {
+  return remember {
+    val prefs = context.getSharedPreferences("jee_daily_streak_prefs", Context.MODE_PRIVATE)
+    val todayDay = (System.currentTimeMillis() + java.util.TimeZone.getDefault().rawOffset) / 86_400_000L
+    val lastOpenDay = prefs.getLong("last_open_day", -1L)
+    var streak = prefs.getInt("saved_streak", 1)
+
+    if (lastOpenDay == -1L) {
+      streak = 1
+      prefs.edit().putLong("last_open_day", todayDay).putInt("saved_streak", streak).apply()
+    } else if (todayDay == lastOpenDay + 1L) {
+      streak += 1
+      prefs.edit().putLong("last_open_day", todayDay).putInt("saved_streak", streak).apply()
+    } else if (todayDay > lastOpenDay + 1L) {
+      streak = 1
+      prefs.edit().putLong("last_open_day", todayDay).putInt("saved_streak", streak).apply()
+    }
+    streak
+  }
+}
+
+@Composable
 fun QuickToolsGrid(
   onNavigateToTab: (Int) -> Unit
 ) {
@@ -384,7 +420,7 @@ fun QuickToolsGrid(
         subtitle = "Visual Graphs",
         icon = Icons.Default.TrendingUp,
         accentColor = BrandEmerald,
-        onClick = { onNavigateToTab(7) }, // Tab 7 is Analytics & Visual Progress
+        onClick = { onNavigateToTab(7) },
         modifier = Modifier.weight(1f)
       )
       QuickToolButton(
@@ -392,7 +428,7 @@ fun QuickToolsGrid(
         subtitle = "Score & Rank",
         icon = Icons.Default.Calculate,
         accentColor = BrandPrimary,
-        onClick = { onNavigateToTab(3) }, // Tab 3 is Rank & Simulator
+        onClick = { onNavigateToTab(3) },
         modifier = Modifier.weight(1f)
       )
       QuickToolButton(
@@ -408,7 +444,7 @@ fun QuickToolsGrid(
         subtitle = "1-on-1 Chat",
         icon = Icons.Default.ChatBubbleOutline,
         accentColor = BrandSecondary,
-        onClick = { onNavigateToTab(5) }, // Tab 5 is Colleges & Mentors
+        onClick = { onNavigateToTab(5) },
         modifier = Modifier.weight(1f)
       )
     }
@@ -529,11 +565,13 @@ fun FlashFormulaCard(
           .fillMaxWidth()
           .clip(RoundedCornerShape(8.dp))
           .background(MaterialTheme.colorScheme.surfaceVariant)
-          .padding(horizontal = 12.dp, vertical = 8.dp)
+          .padding(horizontal = 14.dp, vertical = 10.dp)
       ) {
         Text(
           text = formula.formula,
-          style = MaterialTheme.typography.titleMedium,
+          style = MaterialTheme.typography.bodyMedium,
+          fontSize = 13.sp,
+          lineHeight = 19.sp,
           fontWeight = FontWeight.ExtraBold,
           fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
           color = formula.subject.color
@@ -726,6 +764,7 @@ fun AddGoalDialog(
 @Composable
 fun UserGreetingHeaderCard(
   userProfile: com.example.data.UserProfile,
+  streakDays: Int = userProfile.currentStreakDays,
   onEditName: () -> Unit,
   onEditAvatar: () -> Unit,
   onOpenSettings: () -> Unit,
@@ -756,7 +795,6 @@ fun UserGreetingHeaderCard(
           modifier = Modifier.weight(1f),
           verticalAlignment = Alignment.CenterVertically
         ) {
-          // User Avatar with Custom Photo / Preset / Monogram + Editable Badge
           UserAvatarView(
             userProfile = userProfile,
             size = 50.dp,
@@ -817,14 +855,17 @@ fun UserGreetingHeaderCard(
         }
       }
 
-      // Quick Badges Row
+      // Quick Badges Row (scrollable & non-wrapping so 88% Energy stays on 1 line)
       Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+          .fillMaxWidth()
+          .horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
       ) {
+        val streakLabel = if (streakDays == 1) "1 Day Streak" else "$streakDays Days Streak"
         GreetingPill(
           icon = "🔥",
-          label = "${userProfile.currentStreakDays} Days Streak",
+          label = streakLabel,
           backgroundColor = BrandAccentGold.copy(alpha = 0.15f),
           textColor = BrandAccentGold
         )
@@ -859,14 +900,16 @@ fun GreetingPill(
       .padding(horizontal = 8.dp, vertical = 4.dp)
   ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-      Text(text = icon, fontSize = 11.sp)
+      Text(text = icon, fontSize = 11.sp, maxLines = 1, softWrap = false)
       Spacer(modifier = Modifier.width(4.dp))
       Text(
         text = label,
         style = MaterialTheme.typography.labelSmall,
         fontSize = 11.sp,
         fontWeight = FontWeight.Bold,
-        color = textColor
+        color = textColor,
+        maxLines = 1,
+        softWrap = false
       )
     }
   }
@@ -940,4 +983,3 @@ fun QuickEditNameDialog(
     }
   )
 }
-
